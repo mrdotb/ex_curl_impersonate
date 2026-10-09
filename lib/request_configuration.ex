@@ -17,7 +17,7 @@ defmodule ExCurlImpersonate.RequestConfiguration do
                 tls_grease tls_key_shares_limit tls_key_usage_no_check tls_record_size_limit
                 tls_signed_cert_timestamps tls_status_request tls_use_new_alps_codepoint
                 ws_ssl_disable_ticket)a
-  @string_opts ~w(form_boundary http2_pseudo_headers_order http2_settings http2_streams
+  @string_opts ~w(cainfo capath form_boundary http2_pseudo_headers_order http2_settings http2_streams
                   http3_httpheader_order http3_pseudo_headers_order http3_settings
                   http3_sig_hash_algs http3_ssl_ec_curves http3_tls_extension_order
                   httpheader_order quic_cid_length quic_transport_parameters
@@ -99,7 +99,7 @@ defmodule ExCurlImpersonate.RequestConfiguration do
   end
 
   defp get_headers(opts) do
-    headers = opts[:headers] || %{}
+    headers = Map.new(opts[:headers] || %{})
 
     if opts[:impersonate],
       do: headers,

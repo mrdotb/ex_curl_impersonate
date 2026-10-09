@@ -12,6 +12,8 @@ defmodule ExCurlImpersonate do
     * `:return_metrics` - if request timing metrics should be included in the returned results, defaults to `false`
     * `:verbose` - if curl should output verbose logs to stdout, useful for debugging. Defaults to `false`
     * `:proxy` - proxy to use for transfers. Can be hostname or IP address with optional port number. Supports various proxy types (http, https, socks4, socks5). Defaults to `nil`
+    * `:cainfo` - path to a PEM CA bundle used to verify peers (curl-impersonate's built-in default is `/etc/ssl/certs/ca-certificates.crt` on Linux, `/etc/ssl/cert.pem` on macOS); set this on distros that keep it elsewhere, e.g. `/etc/pki/tls/certs/ca-bundle.crt`. Defaults to `nil`
+    * `:capath` - path to a directory of hashed CA certificates used to verify peers (built-in default is `/etc/ssl/certs` on Linux); set this on distros that keep it elsewhere. Defaults to `nil`
     * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). When set, the default `user-agent` header is not added. Defaults to `nil`
     * `:impersonate_default_headers` - whether `:impersonate` also sends the browser's default headers. Defaults to `true`
     * `:http_version` - one of `:http1_0`, `:http1_1`, `:http2`, `:http2_tls`, `:http2_prior_knowledge`, `:http3` (falls back if HTTP/3 fails) or `:http3_only`. Defaults to `nil` (curl's default, or the impersonated browser's)

@@ -1,6 +1,7 @@
 defmodule ExCurlImpersonate.Request do
   @moduledoc false
-  # build script lives outside lib/ so it is not part of the runtime app
+  # build script lives outside lib/ so Mix doesn't compile it as a regular source file;
+  # loaded at compile time to compute the Zigler c: options
   @external_resource Path.expand("../build/curl_impersonate.ex", __DIR__)
   Code.require_file("../build/curl_impersonate.ex", __DIR__)
 
@@ -52,6 +53,8 @@ defmodule ExCurlImpersonate.Request do
   };
 
   pub const StringOpts = struct {
+      cainfo: ?[]u8,
+      capath: ?[]u8,
       form_boundary: ?[]u8,
       http2_pseudo_headers_order: ?[]u8,
       http2_settings: ?[]u8,
@@ -256,6 +259,8 @@ defmodule ExCurlImpersonate.Request do
   };
 
   const string_opts = .{
+      .{ "cainfo", cURL.CURLOPT_CAINFO },
+      .{ "capath", cURL.CURLOPT_CAPATH },
       .{ "form_boundary", cURL.CURLOPT_FORM_BOUNDARY },
       .{ "http2_pseudo_headers_order", cURL.CURLOPT_HTTP2_PSEUDO_HEADERS_ORDER },
       .{ "http2_settings", cURL.CURLOPT_HTTP2_SETTINGS },

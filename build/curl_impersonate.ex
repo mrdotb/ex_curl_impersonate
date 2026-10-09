@@ -118,10 +118,43 @@ defmodule ExCurlImpersonate.Build do
 
   # Copy (following symlinks) into the dir Zigler writes the NIF to, under the
   # soname the NIF records as NEEDED, so the rpath finds it at load time.
+  # The target may already be mapped by a running VM, so never rewrite it in
+  # place: skip if identical, else copy to a temp file and rename over it.
   defp install!(lib_path, soname) do
     File.exists?(lib_path) || Mix.raise("libcurl-impersonate not found at #{lib_path}")
     priv_lib = Path.join(Mix.Project.app_path(), "priv/lib")
     File.mkdir_p!(priv_lib)
-    File.cp!(lib_path, Path.join(priv_lib, soname))
+    target = Path.join(priv_lib, soname)
+
+    unless same_file?(lib_path, target) do
+      tmp = target <> ".tmp"
+      File.cp!(lib_path, tmp)
+      File.rename!(tmp, target)
+    end
+
+    install_licenses!(Path.dirname(lib_path), priv_lib)
+  end
+
+  defp same_file?(a, b) do
+    with {:ok, %{size: size}} <- File.stat(a),
+         {:ok, %{size: ^size}} <- File.stat(b) do
+      hash(a) == hash(b)
+    else
+      _ -> false
+    end
+  end
+
+  defp hash(path), do: :crypto.hash(:sha256, File.read!(path))
+
+  defp install_licenses!(dir, priv_lib) do
+    case Path.wildcard(Path.join(dir, "LICENSE*")) do
+      [] ->
+        :ok
+
+      files ->
+        dest = Path.join(priv_lib, "curl-impersonate-licenses")
+        File.mkdir_p!(dest)
+        Enum.each(files, &File.cp!(&1, Path.join(dest, Path.basename(&1))))
+    end
   end
 end

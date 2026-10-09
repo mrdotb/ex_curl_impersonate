@@ -55,6 +55,13 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
     end
   end
 
+  test "keyword-list headers work without :impersonate" do
+    config = RequestConfiguration.build("GET", "http://x", headers: [{"x-a", "1"}])
+    keys = Enum.map(config.headers, & &1.key)
+    assert "x-a" in keys
+    assert "user-agent" in keys
+  end
+
   describe "fingerprint options" do
     test "default to nil" do
       config = RequestConfiguration.build("GET", "http://x")
@@ -62,7 +69,7 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
       assert Enum.all?(Map.values(config.string_opts), &is_nil/1)
       assert Enum.all?(Map.values(config.slist_opts), &is_nil/1)
       assert map_size(config.long_opts) == 18
-      assert map_size(config.string_opts) == 20
+      assert map_size(config.string_opts) == 22
       assert map_size(config.slist_opts) == 3
     end
 

@@ -23,6 +23,10 @@ Supported platforms: Linux x86_64/aarch64 (glibc and musl), macOS arm64/x86_64.
 For other platforms or offline builds, set `CURL_IMPERSONATE_DIR` to a directory containing `include/curl/curl.h` and
 `libcurl-impersonate.so` (or `.dylib`).
 
+The bundled library looks for CA certificates in `/etc/ssl/certs/ca-certificates.crt` (Linux) and `/etc/ssl/cert.pem`
+(macOS). On distros that keep them elsewhere (RHEL, Amazon Linux, minimal containers) pass `:cainfo`, e.g.
+`cainfo: "/etc/pki/tls/certs/ca-bundle.crt"` (or `:capath`).
+
 ## Usage
 
 ```elixir
@@ -74,8 +78,8 @@ More examples and details on using `ExCurlImpersonate.Client` are available on t
 ## Licensing
 
 This package is MIT licensed. The downloaded `libcurl-impersonate` bundles curl, BoringSSL, nghttp2, nghttp3, ngtcp2,
-brotli, zstd, zlib and libidn2 (LGPL-3.0/GPL-2.0); their licenses are in the release tarball, extracted to
-`_build/<env>/curl_impersonate/`.
+brotli, zstd, zlib and libidn2 (LGPL-3.0/GPL-2.0); their license notices ship in
+`priv/lib/curl-impersonate-licenses/`.
 
 ## Documentation
 

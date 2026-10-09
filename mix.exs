@@ -51,6 +51,7 @@ defmodule ExCurlImpersonate.MixProject do
       maintainers: ["mrdotb"],
       licenses: ["MIT"],
       files: ~w(lib build mix.exs README.md LICENSE .formatter.exs),
+      exclude_patterns: [~r/\.Elixir\..*\.zig$/],
       links: %{"GitHub" => @source_url}
     ]
   end

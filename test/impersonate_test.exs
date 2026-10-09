@@ -88,4 +88,17 @@ defmodule ExCurlImpersonate.ImpersonateTest do
                tls_extension_order: "0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513"
              )
   end
+
+  # A bare listening socket lets the TCP connect succeed, so curl reaches the
+  # TLS layer and loads the CA file, which is where :cainfo takes effect.
+  test "cainfo reaches curl" do
+    {:ok, listen} = :gen_tcp.listen(0, [:binary, active: false])
+    {:ok, port} = :inet.port(listen)
+
+    assert {:error, reason} =
+             TestClient.get("https://localhost:#{port}/", cainfo: "/nonexistent/ca.pem")
+
+    :gen_tcp.close(listen)
+    assert reason =~ "SSL_CACERT_BADFILE"
+  end
 end
