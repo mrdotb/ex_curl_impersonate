@@ -2,7 +2,7 @@ name: Publish
 
 on:
   push:
-    branches: [master]
+    branches: [main]
   release:
     types: [published]
 
@@ -24,7 +24,7 @@ jobs:
       - run: mix deps.get
       - name: Publish Documentation
         run: mix hex.publish docs --yes
-        if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
       - name: Publish Package
         run: mix hex.publish --yes
         if: github.event_name == 'release' && github.event.action == 'published'
