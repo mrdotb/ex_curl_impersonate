@@ -27,6 +27,3 @@ ex_curl_impersonate-*.tar
 
 lib/.Elixir.*.zig
 
-# devenv
-.devenv*
-devenv.local.nix
