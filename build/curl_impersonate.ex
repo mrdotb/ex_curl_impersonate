@@ -27,7 +27,9 @@ defmodule ExCurlImpersonate.Build do
     [
       include_dirs: Path.join(dir, "include"),
       link_lib: Path.join(dir, link_name),
-      rpaths: [{:special, rpath}]
+      # the NIF loads the copy next to it in priv/lib; the absolute dir lets
+      # Zigler's sema executable (run during compilation) find the library too
+      rpaths: [{:special, rpath}, dir]
     ]
   end
 
