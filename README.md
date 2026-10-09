@@ -1,12 +1,11 @@
 # ExCurlImpersonate [![CI](https://github.com/mrdotb/ex_curl_impersonate/actions/workflows/ci.yml/badge.svg)](https://github.com/mrdotb/ex_curl_impersonate/actions/workflows/ci.yml) [![Hex.pm](https://img.shields.io/hexpm/v/ex_curl_impersonate.svg)](https://hex.pm/packages/ex_curl_impersonate) [![Hexdocs.pm](https://img.shields.io/badge/hex-docs-lightgreen.svg)](https://hexdocs.pm/ex_curl_impersonate/)
 
+Elixir bindings for [curl-impersonate](https://github.com/lexiforest/curl-impersonate) using Zig's C interoperability:
+make HTTP requests with the TLS (JA3/JA4) and HTTP/2/HTTP/3 fingerprints of real browsers.
+
 Fork of [ex_curl](https://github.com/danielrudn/ex_curl) by Daniel Rudnitski.
 
-Elixir bindings for libcurl using Zig's C interoperability.
-
 ## Installation
-
-The package can be installed by adding `ex_curl_impersonate` to your list of dependencies in `mix.exs`:
 
 ```elixir
 def deps do
@@ -16,30 +15,33 @@ def deps do
 end
 ```
 
-To install `ex_curl_impersonate` in a Livebook, you can use `Mix.install/2`:
+Compiling requires [Zig 0.16](https://ziglang.org/download/) (or let Zigler fetch it). No system curl is needed: the pinned
+`libcurl-impersonate` v2.2.3 release for your platform is downloaded at compile time, checksum-verified and shipped in
+`priv/lib/` next to the NIF.
 
-```elixir
-Mix.install([
-  {:ex_curl_impersonate, "~> 0.1.0"}
-])
-```
+Supported platforms: Linux x86_64/aarch64 (glibc and musl), macOS arm64/x86_64.
+For other platforms or offline builds, set `CURL_IMPERSONATE_DIR` to a directory containing `include/curl/curl.h` and
+`libcurl-impersonate.so` (or `.dylib`).
 
 ## Usage
 
 ```elixir
-ExCurlImpersonate.get("https://httpbin.org/get")
-# => {:ok, %ExCurlImpersonate.Response{status_code: 200, headers: %{"content-type" => "application/json", body: "{...}"}}}
+ExCurlImpersonate.get("https://tls.peet.ws/api/all", impersonate: "chrome136")
 
-# view request metrics
-ExCurlImpersonate.get!("https://httpbin.org/get", return_metrics: true)
-# => %ExCurlImpersonate.Response{status_code: 200, metrics: %ExCurlImpersonate.ResponseMetrics{total_time: 0.2, ...}, ...}}
+# HTTP/3
+ExCurlImpersonate.get("https://cloudflare-quic.com/", impersonate: "chrome136", http_version: :http3_only)
 
-# submit a form
-ExCurlImpersonate.post("https://httpbin.org/post", body: "text=#{URI.encode_www_form("some value")}")
-# => {:ok, %ExCurlImpersonate.Response{status_code: 200, body: "{...}"}}}
+# fine-tune the fingerprint
+ExCurlImpersonate.get("https://example.com", impersonate: "chrome136", tls_grease: false, httpbaseheader: [])
 ```
 
-General usage examples and documentation can be found on the [ExCurlImpersonate module documentation page](https://hexdocs.pm/ex_curl_impersonate/ExCurlImpersonate.html).
+See the `ExCurlImpersonate` module docs for all options.
+
+## Licensing
+
+This package is MIT licensed. The downloaded `libcurl-impersonate` bundles curl, BoringSSL, nghttp2, nghttp3, ngtcp2,
+brotli, zstd, zlib and libidn2 (LGPL-3.0/GPL-2.0); their licenses are in the release tarball, extracted to
+`_build/<env>/curl_impersonate/`.
 
 ### HTTP Clients and Shared Defaults
 
@@ -83,7 +85,7 @@ be found at <https://hexdocs.pm/ex_curl_impersonate>.
 
 ## Acknowledgements
 
-This library is built on top of [libcurl](https://curl.se/libcurl/) as a NIF using [Zigler](https://github.com/ityonemo/zigler) and [Zig's C interoperability](https://ziglang.org/learn/samples/#using-curl-from-zig).
+This library is built on top of [curl-impersonate](https://github.com/lexiforest/curl-impersonate) as a NIF using [Zigler](https://github.com/ityonemo/zigler) and [Zig's C interoperability](https://ziglang.org/learn/samples/#using-curl-from-zig).
 
 Inspired by [Tesla](https://github.com/elixir-tesla/tesla), [Katipo](https://github.com/puzza007/katipo), and [Req](https://github.com/wojtekmach/req).
 
