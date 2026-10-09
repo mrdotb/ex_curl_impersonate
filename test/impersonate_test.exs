@@ -1,0 +1,66 @@
+defmodule ExCurlImpersonate.ImpersonateTest do
+  use ExUnit.Case, async: true
+
+  alias ExCurlImpersonate.TestClient
+
+  setup do
+    {:ok, bypass: Bypass.open()}
+  end
+
+  defp echo_headers(bypass) do
+    Bypass.expect(bypass, "GET", "/h", fn conn ->
+      Plug.Conn.send_resp(conn, 200, Jason.encode!(Map.new(conn.req_headers)))
+    end)
+  end
+
+  defp get_headers(bypass, opts) do
+    {:ok, resp} = TestClient.get("http://localhost:#{bypass.port}/h", opts)
+    Jason.decode!(resp.body)
+  end
+
+  test "impersonate sends the browser's default headers", %{bypass: bypass} do
+    echo_headers(bypass)
+    headers = get_headers(bypass, impersonate: "chrome136")
+    assert headers["sec-ch-ua"] =~ "Chrome"
+    assert "Mozilla/5.0" <> _ = headers["user-agent"]
+  end
+
+  test "impersonate_default_headers: false omits them", %{bypass: bypass} do
+    echo_headers(bypass)
+    headers = get_headers(bypass, impersonate: "chrome136", impersonate_default_headers: false)
+    refute Map.has_key?(headers, "sec-ch-ua")
+    refute String.starts_with?(headers["user-agent"] || "", "ex_curl_impersonate/")
+  end
+
+  test "a user-supplied user-agent overrides the preset", %{bypass: bypass} do
+    echo_headers(bypass)
+    headers = get_headers(bypass, impersonate: "chrome136", headers: %{"user-agent" => "mine"})
+    assert headers["user-agent"] == "mine"
+  end
+
+  test "unknown impersonate target returns an error" do
+    assert {:error, "BAD_FUNCTION_ARGUMENT"} =
+             ExCurlImpersonate.get("http://localhost:1/", impersonate: "netscape4")
+  end
+
+  test "reports the negotiated http version", %{bypass: bypass} do
+    Bypass.expect(bypass, "GET", "/v", &Plug.Conn.send_resp(&1, 200, "OK"))
+    {:ok, resp} = TestClient.get("http://localhost:#{bypass.port}/v")
+    assert resp.http_version == :http1_1
+  end
+
+  test "http_version: :http1_0 is honoured", %{bypass: bypass} do
+    test_pid = self()
+
+    Bypass.expect(bypass, "GET", "/v", fn conn ->
+      send(test_pid, {:protocol, Plug.Conn.get_http_protocol(conn)})
+      Plug.Conn.send_resp(conn, 200, "OK")
+    end)
+
+    {:ok, %{status_code: 200}} =
+      TestClient.get("http://localhost:#{bypass.port}/v", http_version: :http1_0)
+
+    # the server (cowboy) always answers HTTP/1.1, so assert on what it received
+    assert_receive {:protocol, :"HTTP/1.0"}
+  end
+end

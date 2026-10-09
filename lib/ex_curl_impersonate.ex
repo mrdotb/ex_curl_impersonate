@@ -4,7 +4,7 @@ defmodule ExCurlImpersonate do
 
   ## Shared options
 
-    * `:headers` - a map of headers to include in the request, defaults to `%{"user-agent" => "ex_curl_impersonate/0.1.0"}`
+    * `:headers` - a map of headers to include in the request, defaults to `%{"user-agent" => "ex_curl_impersonate/0.1.0"}` (not added when `:impersonate` is set)
     * `:body` - a string to send as the request body, defaults to `""`
     * `:follow_location` - if redirects should be followed, defaults to `true`
     * `:ssl_verifyhost` - if SSL certificates should be verified, defaults to `true`
@@ -12,6 +12,9 @@ defmodule ExCurlImpersonate do
     * `:return_metrics` - if request timing metrics should be included in the returned results, defaults to `false`
     * `:verbose` - if curl should output verbose logs to stdout, useful for debugging. Defaults to `false`
     * `:proxy` - proxy to use for transfers. Can be hostname or IP address with optional port number. Supports various proxy types (http, https, socks4, socks5). Defaults to `nil`
+    * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). When set, the default `user-agent` header is not added. Defaults to `nil`
+    * `:impersonate_default_headers` - whether `:impersonate` also sends the browser's default headers. Defaults to `true`
+    * `:http_version` - one of `:http1_0`, `:http1_1`, `:http2`, `:http2_tls`, `:http2_prior_knowledge`, `:http3` (falls back if HTTP/3 fails) or `:http3_only`. Defaults to `nil` (curl's default, or the impersonated browser's)
 
   ## Error messages
 

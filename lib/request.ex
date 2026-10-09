@@ -25,6 +25,9 @@ defmodule ExCurlImpersonate.Request do
       return_metrics: bool,
       verbose: bool,
       proxy: ?[]u8,
+      impersonate: ?[]u8,
+      impersonate_default_headers: bool,
+      http_version: ?i64,
   };
 
   pub const RequestConfiguration = struct {
@@ -48,6 +51,7 @@ defmodule ExCurlImpersonate.Request do
       body: []u8,
       status_code: u64,
       headers: []u8,
+      http_version: i64,
       metrics: ?ResponseMetrics,
   };
 
@@ -74,7 +78,9 @@ defmodule ExCurlImpersonate.Request do
       defer headers_buffer.deinit();
 
       // set curl opts & callbacks
-      try setCurlOpts(allocator, handle, config);
+      const opts_result = try setCurlOpts(allocator, handle, config);
+      if (opts_result != cURL.CURLE_OK)
+          return beam.make_error_pair(opts_result, .{});
       // set headers
       var header_slist: [*c]cURL.curl_slist = null;
       defer cURL.curl_slist_free_all(header_slist);
@@ -124,10 +130,15 @@ defmodule ExCurlImpersonate.Request do
       if (cURL.curl_easy_getinfo(handle, cURL.CURLINFO_RESPONSE_CODE, &status_code) != cURL.CURLE_OK)
           return error.CURLGETINFO_FAILED;
 
+      var http_version: c_long = 0;
+      if (cURL.curl_easy_getinfo(handle, cURL.CURLINFO_HTTP_VERSION, &http_version) != cURL.CURLE_OK)
+          return error.CURLGETINFO_FAILED;
+
       return .{
           .body = response_buffer.items,
           .status_code = status_code,
           .headers = headers_buffer.items,
+          .http_version = http_version,
           .metrics = if (config.flags.return_metrics) try makeResponseMetrics(handle) else null,
       };
   }
@@ -174,7 +185,15 @@ defmodule ExCurlImpersonate.Request do
       .{ "ssl_verifyhost", cURL.CURLOPT_SSL_VERIFYHOST },
   };
 
-  fn setCurlOpts(allocator: std.mem.Allocator, handle: *cURL.CURL, config: RequestConfiguration) !void {
+  fn setCurlOpts(allocator: std.mem.Allocator, handle: *cURL.CURL, config: RequestConfiguration) !cURL.CURLcode {
+      if (config.flags.impersonate) |target| {
+          const c_target = try allocator.dupeZ(u8, target);
+          defer allocator.free(c_target);
+          const default_headers: c_int = if (config.flags.impersonate_default_headers) 1 else 0;
+          const rc = cURL.curl_easy_impersonate(handle, c_target.ptr, default_headers);
+          if (rc != cURL.CURLE_OK) return rc;
+      }
+
       inline for (bool_flag_opts) |flag| {
           const value: c_long = if (@field(config.flags, flag[0])) 1 else 0;
           if (cURL.curl_easy_setopt(handle, flag[1], value) != cURL.CURLE_OK)
@@ -196,6 +215,13 @@ defmodule ExCurlImpersonate.Request do
       if (config.flags.proxy) |proxy| {
           setStringOpt(allocator, handle, cURL.CURLOPT_PROXY, proxy);
       }
+
+      if (config.flags.http_version) |version| {
+          const rc = cURL.curl_easy_setopt(handle, cURL.CURLOPT_HTTP_VERSION, @as(c_long, @intCast(version)));
+          if (rc != cURL.CURLE_OK) return rc;
+      }
+
+      return cURL.CURLE_OK;
   }
 
   fn setStringOpt(allocator: std.mem.Allocator, handle: *cURL.CURL, opt: cURL.CURLoption, value: []const u8) void {
