@@ -1,3 +1,3 @@
-defmodule ExCurl.CurlError do
+defmodule ExCurlImpersonate.CurlError do
   defexception [:message]
 end

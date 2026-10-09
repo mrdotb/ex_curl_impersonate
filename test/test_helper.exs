@@ -1,2 +1,2 @@
-ExUnit.configure(exclude: [kerberos: true])
+ExUnit.configure(exclude: [external: true])
 ExUnit.start()

@@ -1,15 +1,15 @@
-defmodule ExCurl.Client do
+defmodule ExCurlImpersonate.Client do
   @moduledoc """
-  A helper to create HTTP Clients based on ExCurl that can share common options.
+  A helper to create HTTP Clients based on ExCurlImpersonate that can share common options.
 
   ## Example HTTP Client
 
-  You can `use ExCurl.Client` on any module to provide HTTP Client functionality and share default options. Below is an example based on the great 
+  You can `use ExCurlImpersonate.Client` on any module to provide HTTP Client functionality and share default options. Below is an example based on the great 
   [Tesla documentation](https://hexdocs.pm/tesla/readme.html):
 
   ```elixir
   defmodule GitHubClient do
-    use ExCurl.Client, defaults: [base_url: "https://api.github.com", headers: %{"Authorization" => "Bearer some-secret-token"}]
+    use ExCurlImpersonate.Client, defaults: [base_url: "https://api.github.com", headers: %{"Authorization" => "Bearer some-secret-token"}]
 
     def user_repos(username), do: get("/users/\#{username}/repos")
   end
@@ -33,9 +33,9 @@ defmodule ExCurl.Client do
 
   ```elixir
   defmodule GitHubClient do
-    use ExCurl.Client, defaults: [base_url: "https://api.github.com", headers: %{"Authorization" => "Bearer some-secret-token"}]
+    use ExCurlImpersonate.Client, defaults: [base_url: "https://api.github.com", headers: %{"Authorization" => "Bearer some-secret-token"}]
 
-    def handle_response(%ExCurl.Response{body: body}) do
+    def handle_response(%ExCurlImpersonate.Response{body: body}) do
       case Jason.decode(body) do
         {:ok, decoded_body} -> decoded_body
         _ -> body
@@ -47,7 +47,7 @@ defmodule ExCurl.Client do
   ```
 
   ## Options
-  All of the [Shared Options](https://hexdocs.pm/ex_curl/ExCurl.html#module-shared-options) from ExCurl are available. There are also the following additional options:
+  All of the [Shared Options](https://hexdocs.pm/ex_curl_impersonate/ExCurlImpersonate.html#module-shared-options) from ExCurlImpersonate are available. There are also the following additional options:
 
   * `base_url` - The base URL used for all requests by this client module
   """
@@ -55,7 +55,7 @@ defmodule ExCurl.Client do
   @doc """
   See [Response Handling](#module-response-handling) for usage and examples.
   """
-  @callback handle_response(response :: %ExCurl.Response{}) :: any()
+  @callback handle_response(response :: %ExCurlImpersonate.Response{}) :: any()
   @optional_callbacks handle_response: 1
 
   defmacro __using__(client_opts \\ []) do
@@ -74,8 +74,8 @@ defmodule ExCurl.Client do
       def request(method, url, opts \\ []) do
         merged_opts = Keyword.merge(default_opts(), opts)
 
-        with {:ok, %ExCurl.Response{} = resp} <-
-               ExCurl.request(method, request_url(url, merged_opts), merged_opts) do
+        with {:ok, %ExCurlImpersonate.Response{} = resp} <-
+               ExCurlImpersonate.request(method, request_url(url, merged_opts), merged_opts) do
           if function_exported?(__MODULE__, :handle_response, 1) do
             {:ok, apply(__MODULE__, :handle_response, [resp])}
           else
@@ -86,7 +86,7 @@ defmodule ExCurl.Client do
 
       def request!(method, url, opts \\ []) do
         merged_opts = Keyword.merge(default_opts(), opts)
-        response = ExCurl.request!(method, request_url(url, merged_opts), merged_opts)
+        response = ExCurlImpersonate.request!(method, request_url(url, merged_opts), merged_opts)
 
         if function_exported?(__MODULE__, :handle_response, 1) do
           apply(__MODULE__, :handle_response, [response])

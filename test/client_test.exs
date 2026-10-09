@@ -1,4 +1,4 @@
-defmodule ExCurl.ClientTest do
+defmodule ExCurlImpersonate.ClientTest do
   use ExUnit.Case, async: true
 
   setup do
@@ -15,10 +15,12 @@ defmodule ExCurl.ClientTest do
     end)
 
     defmodule HeaderClient do
-      use ExCurl.Client, defaults: [headers: %{"test-header" => "true"}]
+      use ExCurlImpersonate.Client, defaults: [headers: %{"test-header" => "true"}]
     end
 
-    {:ok, %ExCurl.Response{} = resp} = HeaderClient.get("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      HeaderClient.get("http://localhost:#{bypass.port}/test")
+
     assert resp.status_code == 200
     assert resp.body == "OK"
   end
@@ -30,10 +32,10 @@ defmodule ExCurl.ClientTest do
 
     defmodule BaseURLClient do
       @port bypass.port
-      use ExCurl.Client, defaults: [base_url: "http://localhost:#{@port}"]
+      use ExCurlImpersonate.Client, defaults: [base_url: "http://localhost:#{@port}"]
     end
 
-    {:ok, %ExCurl.Response{} = resp} = BaseURLClient.get("/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} = BaseURLClient.get("/test")
     assert resp.status_code == 200
     assert resp.body == "OK"
   end
@@ -47,12 +49,12 @@ defmodule ExCurl.ClientTest do
     end)
 
     defmodule FunctionDefaultsClient do
-      use ExCurl.Client, defaults: &get_defaults/0
+      use ExCurlImpersonate.Client, defaults: &get_defaults/0
 
       defp get_defaults, do: [headers: %{"test-header" => "true"}]
     end
 
-    {:ok, %ExCurl.Response{} = resp} =
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
       FunctionDefaultsClient.get("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
@@ -68,12 +70,12 @@ defmodule ExCurl.ClientTest do
     end)
 
     defmodule AtomFunctionDefaultsClient do
-      use ExCurl.Client, defaults: :get_defaults
+      use ExCurlImpersonate.Client, defaults: :get_defaults
 
       def get_defaults, do: [headers: %{"test-header" => "true"}]
     end
 
-    {:ok, %ExCurl.Response{} = resp} =
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
       AtomFunctionDefaultsClient.get("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
@@ -86,9 +88,10 @@ defmodule ExCurl.ClientTest do
     end)
 
     defmodule HandleResponseClient do
-      use ExCurl.Client
+      use ExCurlImpersonate.Client
 
-      def handle_response(%ExCurl.Response{status_code: 200, body: "OK"}), do: "HANDLED"
+      def handle_response(%ExCurlImpersonate.Response{status_code: 200, body: "OK"}),
+        do: "HANDLED"
     end
 
     assert {:ok, "HANDLED"} == HandleResponseClient.get("http://localhost:#{bypass.port}/test")

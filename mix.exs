@@ -1,12 +1,12 @@
-defmodule ExCurl.MixProject do
+defmodule ExCurlImpersonate.MixProject do
   use Mix.Project
 
-  @source_url "https://github.com/danielrudn/ex_curl"
+  @source_url "https://github.com/mrdotb/ex_curl_impersonate"
 
   def project do
     [
-      app: :ex_curl,
-      version: "0.4.0",
+      app: :ex_curl_impersonate,
+      version: "0.1.0",
       elixir: "~> 1.17",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -46,9 +46,11 @@ defmodule ExCurl.MixProject do
 
   defp package do
     [
-      description: "Elixir bindings for libcurl.",
-      maintainers: ["Daniel Rudnitski"],
+      description:
+        "Elixir bindings for libcurl-impersonate (browser TLS/HTTP2 fingerprint impersonation).",
+      maintainers: ["mrdotb"],
       licenses: ["MIT"],
+      files: ~w(lib build mix.exs README.md LICENSE .formatter.exs),
       links: %{"GitHub" => @source_url}
     ]
   end

@@ -1,4 +1,4 @@
-defmodule ExCurl.TestClient do
+defmodule ExCurlImpersonate.TestClient do
   @moduledoc false
-  use ExCurl.Client
+  use ExCurlImpersonate.Client
 end

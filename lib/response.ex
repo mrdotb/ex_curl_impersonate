@@ -1,15 +1,15 @@
-defmodule ExCurl.Response do
+defmodule ExCurlImpersonate.Response do
   @moduledoc """
-  A valid response returned by ExCurl.
+  A valid response returned by ExCurlImpersonate.
 
   ## Metrics
 
-  When the `return_metrics` option is set to `true` for a request, the `metrics` field will be populated with a [`%ExCurl.ResponseMetrics{}`](https://hexdocs.pm/ex_curl/ExCurl.ResponseMetrics.html) value.
+  When the `return_metrics` option is set to `true` for a request, the `metrics` field will be populated with a [`%ExCurlImpersonate.ResponseMetrics{}`](https://hexdocs.pm/ex_curl_impersonate/ExCurlImpersonate.ResponseMetrics.html) value.
 
   For example:
 
-        iex> ExCurl.get!("https://httpbin.org/get", return_metrics: true)
-        %ExCurl.Response{status_code: 200, metrics: %ExCurl.ResponseMetrics{}, ...}
+        iex> ExCurlImpersonate.get!("https://httpbin.org/get", return_metrics: true)
+        %ExCurlImpersonate.Response{status_code: 200, metrics: %ExCurlImpersonate.ResponseMetrics{}, ...}
 
   """
   defstruct body: "",
@@ -21,7 +21,7 @@ defmodule ExCurl.Response do
           body: nil | String.t(),
           headers: map(),
           status_code: integer(),
-          metrics: nil | ExCurl.ResponseMetrics.t()
+          metrics: nil | ExCurlImpersonate.ResponseMetrics.t()
         }
 
   @doc false
@@ -47,5 +47,6 @@ defmodule ExCurl.Response do
 
   defp parse_metrics(nil), do: nil
 
-  defp parse_metrics(metrics) when is_map(metrics), do: struct(ExCurl.ResponseMetrics, metrics)
+  defp parse_metrics(metrics) when is_map(metrics),
+    do: struct(ExCurlImpersonate.ResponseMetrics, metrics)
 end

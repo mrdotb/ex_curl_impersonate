@@ -1,4 +1,4 @@
-defmodule ExCurl.ResponseMetrics do
+defmodule ExCurlImpersonate.ResponseMetrics do
   @moduledoc """
   Request timing metrics.
 

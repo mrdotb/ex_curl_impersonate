@@ -1,4 +1,4 @@
-defmodule ExCurl.RequestConfiguration do
+defmodule ExCurlImpersonate.RequestConfiguration do
   @moduledoc false
 
   defstruct headers: %{}, url: "", method: "", body: "", flags: %{}
@@ -15,14 +15,13 @@ defmodule ExCurl.RequestConfiguration do
         ssl_verifypeer: Keyword.get(opts, :ssl_verifypeer, true),
         return_metrics: Keyword.get(opts, :return_metrics, false),
         verbose: Keyword.get(opts, :verbose, false),
-        http_auth_negotiate: Keyword.get(opts, :http_auth_negotiate, false),
         proxy: Keyword.get(opts, :proxy, nil)
       }
     }
   end
 
   defp get_headers(opts) do
-    add_header_if_not_exists(opts[:headers] || %{}, "user-agent", "ex_curl/0.4.0")
+    add_header_if_not_exists(opts[:headers] || %{}, "user-agent", "ex_curl_impersonate/0.1.0")
   end
 
   defp add_header_if_not_exists(headers, key, value) do

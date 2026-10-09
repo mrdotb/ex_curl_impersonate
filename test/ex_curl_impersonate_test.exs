@@ -1,6 +1,6 @@
-defmodule ExCurlTest do
+defmodule ExCurlImpersonateTest do
   use ExUnit.Case, async: true
-  doctest ExCurl
+  doctest ExCurlImpersonate
 
   setup do
     bypass = Bypass.open()
@@ -12,8 +12,8 @@ defmodule ExCurlTest do
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -24,8 +24,8 @@ defmodule ExCurlTest do
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.post("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.post("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -36,8 +36,8 @@ defmodule ExCurlTest do
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.patch("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.patch("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -50,8 +50,8 @@ defmodule ExCurlTest do
       |> Plug.Conn.send_resp(200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -63,8 +63,10 @@ defmodule ExCurlTest do
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("http://localhost:#{bypass.port}/test", return_metrics: true)
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("http://localhost:#{bypass.port}/test",
+        return_metrics: true
+      )
 
     assert resp.metrics != nil
     assert resp.metrics.total_time != 0
@@ -87,8 +89,8 @@ defmodule ExCurlTest do
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -101,77 +103,80 @@ defmodule ExCurlTest do
       |> Plug.Conn.send_resp(301, "REDIRECT")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("http://localhost:#{bypass.port}/test", follow_location: false)
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("http://localhost:#{bypass.port}/test",
+        follow_location: false
+      )
 
     assert resp.status_code == 301
     assert resp.body == "REDIRECT"
   end
 
   test "error on malformatted url" do
-    assert {:error, "URL_MALFORMAT"} == ExCurl.TestClient.get("http://\n\n.com")
+    assert {:error, "URL_MALFORMAT"} == ExCurlImpersonate.TestClient.get("http://\n\n.com")
   end
 
   test "error on unsupported protocol" do
-    assert {:error, "UNSUPPORTED_PROTOCOL"} == ExCurl.TestClient.get("grpc://openstatus.co")
+    assert {:error, "UNSUPPORTED_PROTOCOL"} ==
+             ExCurlImpersonate.TestClient.get("grpc://openstatus.co")
   end
 
   test "error on expired SSL cert" do
     valid_errors = ["PEER_FAILED_VERIFICATION", "SSL_CONNECT_ERROR"]
-    assert {:error, error_msg} = ExCurl.TestClient.get("https://expired.badssl.com")
+    assert {:error, error_msg} = ExCurlImpersonate.TestClient.get("https://expired.badssl.com")
     assert error_msg in valid_errors
   end
 
   test "can disable ssl peer validation" do
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("https://expired.badssl.com", ssl_verifypeer: false)
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("https://expired.badssl.com", ssl_verifypeer: false)
 
     assert resp.status_code == 200
   end
 
   test "error on wrong SSL host" do
     {:error, "PEER_FAILED_VERIFICATION"} =
-      ExCurl.TestClient.get("https://wrong.host.badssl.com", ssl_verifypeer: false)
+      ExCurlImpersonate.TestClient.get("https://wrong.host.badssl.com", ssl_verifypeer: false)
   end
 
   test "can disable ssl host validation" do
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("https://wrong.host.badssl.com", ssl_verifyhost: false)
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("https://wrong.host.badssl.com", ssl_verifyhost: false)
 
     assert resp.status_code == 200
   end
 
-  test "request/3 returns {:ok, %ExCurl.Response{}} on success", %{bypass: bypass} do
+  test "request/3 returns {:ok, %ExCurlImpersonate.Response{}} on success", %{bypass: bypass} do
     Bypass.expect(bypass, "GET", "/test", fn conn ->
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.request("GET", "http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.request("GET", "http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
   end
 
   test "request/3 returns {:error, message} om error" do
-    assert {:error, "URL_MALFORMAT"} == ExCurl.TestClient.request("GET", "https://")
+    assert {:error, "URL_MALFORMAT"} == ExCurlImpersonate.TestClient.request("GET", "https://")
   end
 
-  test "request!/3 returns %ExCurl.Response{} on success", %{bypass: bypass} do
+  test "request!/3 returns %ExCurlImpersonate.Response{} on success", %{bypass: bypass} do
     Bypass.expect(bypass, "GET", "/test", fn conn ->
       Plug.Conn.send_resp(conn, 200, "OK")
     end)
 
-    %ExCurl.Response{} =
-      resp = ExCurl.TestClient.request!("GET", "http://localhost:#{bypass.port}/test")
+    %ExCurlImpersonate.Response{} =
+      resp = ExCurlImpersonate.TestClient.request!("GET", "http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
   end
 
   test "request!/3 raises one error" do
-    assert_raise ExCurl.CurlError, ~r/CURLE_URL_MALFORMAT/, fn ->
-      ExCurl.TestClient.request!("GET", "https://")
+    assert_raise ExCurlImpersonate.CurlError, ~r/CURLE_URL_MALFORMAT/, fn ->
+      ExCurlImpersonate.TestClient.request!("GET", "https://")
     end
   end
 end

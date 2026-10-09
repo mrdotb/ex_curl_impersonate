@@ -1,4 +1,4 @@
-defmodule ExCurl.BodyTest do
+defmodule ExCurlImpersonate.BodyTest do
   use ExUnit.Case, async: true
 
   setup do
@@ -14,8 +14,10 @@ defmodule ExCurl.BodyTest do
       end
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.post("http://localhost:#{bypass.port}/test", body: "testing=true")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.post("http://localhost:#{bypass.port}/test",
+        body: "testing=true"
+      )
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -29,8 +31,8 @@ defmodule ExCurl.BodyTest do
       end
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.post("http://localhost:#{bypass.port}/test")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.post("http://localhost:#{bypass.port}/test")
 
     assert resp.status_code == 200
     assert resp.body == "OK"
@@ -44,8 +46,10 @@ defmodule ExCurl.BodyTest do
       end
     end)
 
-    {:ok, %ExCurl.Response{} = resp} =
-      ExCurl.TestClient.get("http://localhost:#{bypass.port}/test", body: "testing=true")
+    {:ok, %ExCurlImpersonate.Response{} = resp} =
+      ExCurlImpersonate.TestClient.get("http://localhost:#{bypass.port}/test",
+        body: "testing=true"
+      )
 
     assert resp.status_code == 400
     assert resp.body == "Missing body"

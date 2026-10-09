@@ -1,4 +1,4 @@
-defmodule ExCurl.CurlErrorCodes do
+defmodule ExCurlImpersonate.CurlErrorCodes do
   @moduledoc """
   Helper functions to map [libcurl error codes](https://curl.se/libcurl/c/libcurl-errors.html) from their integer value to the string value and vice versa.
   """
@@ -114,10 +114,10 @@ defmodule ExCurl.CurlErrorCodes do
   ## Examples
 
 
-      iex> ExCurl.CurlErrorCodes.get_code("URL_MALFORMAT")
+      iex> ExCurlImpersonate.CurlErrorCodes.get_code("URL_MALFORMAT")
       3
 
-      iex> ExCurl.CurlErrorCodes.get_code("DOESN'T EXIST")
+      iex> ExCurlImpersonate.CurlErrorCodes.get_code("DOESN'T EXIST")
       -1
   """
   def get_code(message) when message in @all_error_codes,
@@ -133,10 +133,10 @@ defmodule ExCurl.CurlErrorCodes do
   ## Examples
 
 
-      iex> ExCurl.CurlErrorCodes.get_message(3)
+      iex> ExCurlImpersonate.CurlErrorCodes.get_message(3)
       "URL_MALFORMAT"
 
-      iex> ExCurl.CurlErrorCodes.get_message(256)
+      iex> ExCurlImpersonate.CurlErrorCodes.get_message(256)
       "CODE_OUT_OF_RANGE"
   """
   def get_message(code) when is_integer(code) and code >= 0 and code <= 99,
