@@ -4,110 +4,36 @@ on:
   push:
     branches:
       - main
-  schedule:
-    # Mondays 14:17 UTC (~9:17 EST / 10:17 EDT)
-    - cron: "17 14 * * 1"
   workflow_dispatch:
 
 env:
   MIX_ENV: test
 
 jobs:
-  ci-macos:
-    runs-on: macos-latest
+  test:
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - pair:
-              elixir: "1.19"
-              otp: "28.0"
-          - pair:
-              elixir: "1.20"
-              otp: "29.0"
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
-      - name: Generate .tool-versions file
-        run: |
-          echo "elixir ${{ matrix.pair.elixir }}" >> .tool-versions
-          echo "erlang ${{ matrix.pair.otp }}" >> .tool-versions
-          cp .tool-versions ~/.
-          cat .tool-versions
-      - uses: asdf-vm/actions/install@v4
-      - uses: goto-bus-stop/setup-zig@v2
+
+      # installs erlang, elixir and zig at the versions pinned in mise.toml
+      - uses: jdx/mise-action@v2
         with:
-          version: 0.16.0
-      - name: Install Hex package manager
-        run: mix local.hex --force && mix local.rebar --force
-      - run: mix deps.get
+          cache: true
+
       - uses: actions/cache@v4
         with:
           path: |
-            ~/.asdf
             deps
-          key: mix-deps-${{ hashFiles('**/mix.lock') }}-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}
-      - uses: actions/cache@v4
-        with:
-          path: _build/test/curl_impersonate
-          key: curl-impersonate-2.2.3-${{ runner.os }}-${{ runner.arch }}
-      - run: mix test
-  ci-ubuntu:
-    runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - pair:
-              elixir: "1.17"
-              otp: "27.0"
-          - pair:
-              elixir: "1.18"
-              otp: "27.0"
-          - pair:
-              elixir: "1.19"
-              otp: "28.0"
-          - pair:
-              elixir: "1.20"
-              otp: "29.0"
-            lint: lint
-    steps:
-      - uses: actions/checkout@v4
+            _build/test/curl_impersonate
+          key: mix-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('mise.toml', 'mix.lock') }}
 
-      - uses: goto-bus-stop/setup-zig@v2
-        with:
-          version: 0.16.0
-
-      - uses: erlef/setup-beam@v1
-        with:
-          otp-version: ${{matrix.pair.otp}}
-          elixir-version: ${{matrix.pair.elixir}}
-          version-type: strict
-
-      - uses: actions/cache@v4
-        with:
-          path: deps
-          key: mix-deps-${{ hashFiles('**/mix.lock') }}
-
+      - run: mix local.hex --force && mix local.rebar --force
       - run: mix deps.get
-
       - run: mix format --check-formatted
-        if: ${{ matrix.lint }}
-
       - run: mix deps.unlock --check-unused
-        if: ${{ matrix.lint }}
-
-      - uses: actions/cache@v4
-        with:
-          path: _build/test/curl_impersonate
-          key: curl-impersonate-2.2.3-${{ runner.os }}-${{ runner.arch }}
-
-      - run: mix deps.compile
-
       - run: mix compile --warnings-as-errors
-        if: ${{ matrix.lint }}
-
-      - run: mix test
-        if: ${{ ! matrix.lint }}
-
       - run: mix test --warnings-as-errors
-        if: ${{ matrix.lint }}
