@@ -328,6 +328,13 @@ defmodule ExCurlImpersonate.Request do
           setStringOpt(allocator, handle, cURL.CURLOPT_PROXY, proxy);
       }
 
+      // enable the in-memory cookie engine so cookies set during redirects are
+      // sent on the following hops, like a browser; nothing is read from disk
+      {
+          const rc = cURL.curl_easy_setopt(handle, cURL.CURLOPT_COOKIEFILE, "");
+          if (rc != cURL.CURLE_OK) return rc;
+      }
+
       // "" = every encoding this libcurl supports; curl then decodes the body
       if (config.flags.accept_encoding) |encoding| {
           const c_encoding = try allocator.dupeZ(u8, encoding);

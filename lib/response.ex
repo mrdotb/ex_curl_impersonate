@@ -2,6 +2,9 @@ defmodule ExCurlImpersonate.Response do
   @moduledoc """
   A valid response returned by ExCurlImpersonate.
 
+  `headers` - the headers of the final response (headers of redirect hops and interim `1xx` responses are dropped).
+  Repeated headers are joined with `", "`, except `set-cookie`, which is always a list of every cookie the server set.
+
   `http_version` - the HTTP version used for the response (`:http1_0`, `:http1_1`, `:http2`, `:http3`).
 
   ## Metrics
@@ -22,7 +25,7 @@ defmodule ExCurlImpersonate.Response do
 
   @type t :: %__MODULE__{
           body: nil | String.t(),
-          headers: map(),
+          headers: %{optional(String.t()) => String.t() | [String.t()]},
           status_code: integer(),
           http_version: nil | :http1_0 | :http1_1 | :http2 | :http3,
           metrics: nil | ExCurlImpersonate.ResponseMetrics.t()
@@ -40,14 +43,30 @@ defmodule ExCurlImpersonate.Response do
     }
   end
 
+  # curl hands us the header lines of every response in the chain (redirect
+  # hops, 1xx/101 interim responses, proxy CONNECT); keep only the last one,
+  # which is the response the body belongs to.
   defp header_string_to_map(headers) do
     headers
     |> String.split("\r\n")
-    |> Stream.filter(&String.contains?(&1, ":"))
-    |> Stream.map(&String.split(&1, ": "))
-    |> Stream.map(fn [head | rest] -> [head, Enum.join(rest, ": ")] end)
-    |> Stream.map(fn [key, value] -> {key, value} end)
-    |> Enum.into(%{})
+    |> Enum.reduce([], fn
+      "HTTP/" <> _, _blocks_so_far -> []
+      line, acc -> [line | acc]
+    end)
+    |> Enum.reverse()
+    |> Enum.flat_map(&parse_header_line/1)
+    |> Enum.group_by(fn {key, _} -> key end, fn {_, value} -> value end)
+    |> Map.new(fn
+      {"set-cookie" = key, values} -> {key, values}
+      {key, values} -> {key, Enum.join(values, ", ")}
+    end)
+  end
+
+  defp parse_header_line(line) do
+    case String.split(line, ":", parts: 2) do
+      [key, value] when key != "" -> [{key, String.trim(value)}]
+      _ -> []
+    end
   end
 
   # CURLINFO_HTTP_VERSION values
