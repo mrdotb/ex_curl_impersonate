@@ -63,4 +63,29 @@ defmodule ExCurlImpersonate.ImpersonateTest do
     # the server (cowboy) always answers HTTP/1.1, so assert on what it received
     assert_receive {:protocol, :"HTTP/1.0"}
   end
+
+  test "httpbaseheader replaces the preset base headers", %{bypass: bypass} do
+    echo_headers(bypass)
+    headers = get_headers(bypass, impersonate: "chrome136", httpbaseheader: ["x-base: 1"])
+    assert headers["x-base"] == "1"
+    refute Map.has_key?(headers, "sec-ch-ua")
+  end
+
+  test "httpbaseheader: [] clears the preset base headers", %{bypass: bypass} do
+    echo_headers(bypass)
+    headers = get_headers(bypass, impersonate: "chrome136", httpbaseheader: [])
+    refute Map.has_key?(headers, "sec-ch-ua")
+  end
+
+  test "long and string options are accepted by curl", %{bypass: bypass} do
+    Bypass.expect(bypass, "GET", "/v", &Plug.Conn.send_resp(&1, 200, "OK"))
+
+    assert {:ok, %{status_code: 200}} =
+             TestClient.get("http://localhost:#{bypass.port}/v",
+               tls_grease: true,
+               ssl_enable_ticket: false,
+               http2_settings: "1:65536;4:6291456",
+               tls_extension_order: "0-23-65281-10-11-35-16-5-13-18-51-45-43-27-17513"
+             )
+  end
 end

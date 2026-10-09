@@ -54,4 +54,54 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
       RequestConfiguration.build("GET", "http://x", impersonate: :chrome)
     end
   end
+
+  describe "fingerprint options" do
+    test "default to nil" do
+      config = RequestConfiguration.build("GET", "http://x")
+      assert Enum.all?(Map.values(config.long_opts), &is_nil/1)
+      assert Enum.all?(Map.values(config.string_opts), &is_nil/1)
+      assert Enum.all?(Map.values(config.slist_opts), &is_nil/1)
+      assert map_size(config.long_opts) == 18
+      assert map_size(config.string_opts) == 20
+      assert map_size(config.slist_opts) == 3
+    end
+
+    test "booleans become 1/0 and false is not dropped" do
+      config =
+        RequestConfiguration.build("GET", "http://x",
+          tls_grease: true,
+          ssl_enable_ticket: false,
+          tls_record_size_limit: 4001
+        )
+
+      assert config.long_opts.tls_grease == 1
+      assert config.long_opts.ssl_enable_ticket == 0
+      assert config.long_opts.tls_record_size_limit == 4001
+    end
+
+    test "strings and lists pass through" do
+      config =
+        RequestConfiguration.build("GET", "http://x",
+          http2_settings: "1:65536",
+          httpbaseheader: ["a: 1"]
+        )
+
+      assert config.string_opts.http2_settings == "1:65536"
+      assert config.slist_opts.httpbaseheader == ["a: 1"]
+    end
+
+    test "wrong types raise ArgumentError naming the option" do
+      assert_raise ArgumentError, ~r/:tls_grease/, fn ->
+        RequestConfiguration.build("GET", "http://x", tls_grease: "yes")
+      end
+
+      assert_raise ArgumentError, ~r/:http2_settings/, fn ->
+        RequestConfiguration.build("GET", "http://x", http2_settings: 1)
+      end
+
+      assert_raise ArgumentError, ~r/:httpbaseheader/, fn ->
+        RequestConfiguration.build("GET", "http://x", httpbaseheader: "a: 1")
+      end
+    end
+  end
 end

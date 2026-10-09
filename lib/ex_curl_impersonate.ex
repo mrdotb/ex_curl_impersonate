@@ -16,6 +16,17 @@ defmodule ExCurlImpersonate do
     * `:impersonate_default_headers` - whether `:impersonate` also sends the browser's default headers. Defaults to `true`
     * `:http_version` - one of `:http1_0`, `:http1_1`, `:http2`, `:http2_tls`, `:http2_prior_knowledge`, `:http3` (falls back if HTTP/3 fails) or `:http3_only`. Defaults to `nil` (curl's default, or the impersonated browser's)
 
+  ## Fingerprint options
+
+  Every option added by [curl-impersonate](https://github.com/lexiforest/curl-impersonate) is available, named after the
+  lowercased `CURLOPT_` constant (e.g. `CURLOPT_TLS_GREASE` → `:tls_grease`). They default to `nil` (not set) and are applied
+  after `:impersonate`, so they override the preset.
+
+    * integer / boolean: `:http2_no_priority`, `:http2_window_update`, `:http3_ssl_permute_extensions`, `:proxy_credential_no_reuse`, `:quic_initial_packet_number`, `:split_cookies`, `:ssl_enable_alps`, `:ssl_enable_ticket`, `:ssl_permute_extensions`, `:stream_exclusive`, `:tls_grease`, `:tls_key_shares_limit`, `:tls_key_usage_no_check`, `:tls_record_size_limit`, `:tls_signed_cert_timestamps`, `:tls_status_request`, `:tls_use_new_alps_codepoint`, `:ws_ssl_disable_ticket`
+    * string: `:form_boundary`, `:http2_pseudo_headers_order`, `:http2_settings`, `:http2_streams`, `:http3_httpheader_order`, `:http3_pseudo_headers_order`, `:http3_settings`, `:http3_sig_hash_algs`, `:http3_ssl_ec_curves`, `:http3_tls_extension_order`, `:httpheader_order`, `:quic_cid_length`, `:quic_transport_parameters`, `:ssl_cert_compression`, `:ssl_sig_hash_algs`, `:tls_delegated_credentials`, `:tls_extension_order`, `:tls_trust_anchors`, `:ws_httpheader_order`, `:ws_ssl_cert_compression`
+    * list of `"Name: value"` strings: `:httpbaseheader`, `:http3_httpheader`, `:ws_httpheader`.
+      `httpbaseheader: []` removes the impersonated browser's default headers.
+
   ## Error messages
 
   Error messages refer to error codes on the [libcurl error codes documentation page](https://curl.se/libcurl/c/libcurl-errors.html).
