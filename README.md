@@ -24,6 +24,10 @@ Compiling requires [Zig 0.16](https://ziglang.org/download/) (or let Zigler fetc
 `libcurl-impersonate` v2.2.3 release for your platform is downloaded at compile time, checksum-verified and shipped in
 `priv/lib/` next to the NIF.
 
+Zigler prefers its own toolchain in `~/.cache/zigler` and otherwise falls back to the first `zig` on your `PATH`. If an
+older Zig is on `PATH` you will see errors like `build.zig.zon: error: expected string literal`; fix it by running
+`mix zig.get` once (downloads Zig 0.16 into Zigler's cache) or `mise exec zig@0.16.0 -- mix compile`.
+
 Supported platforms: Linux x86_64/aarch64 (glibc and musl), macOS arm64/x86_64.
 For other platforms or offline builds, set `CURL_IMPERSONATE_DIR` to a directory containing `include/curl/curl.h` and
 `libcurl-impersonate.so` (or `.dylib`).

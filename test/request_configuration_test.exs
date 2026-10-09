@@ -111,4 +111,18 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
       end
     end
   end
+
+  test "accept_encoding defaults to all encodings and false disables it" do
+    assert RequestConfiguration.build("GET", "http://x").flags.accept_encoding == ""
+
+    assert RequestConfiguration.build("GET", "http://x", accept_encoding: "gzip").flags.accept_encoding ==
+             "gzip"
+
+    assert RequestConfiguration.build("GET", "http://x", accept_encoding: false).flags.accept_encoding ==
+             nil
+
+    assert_raise ArgumentError, ~r/:accept_encoding/, fn ->
+      RequestConfiguration.build("GET", "http://x", accept_encoding: true)
+    end
+  end
 end

@@ -16,6 +16,10 @@ defmodule ExCurlImpersonate do
     * `:capath` - path to a directory of hashed CA certificates used to verify peers (built-in default is `/etc/ssl/certs` on Linux); set this on distros that keep it elsewhere. Defaults to `nil`
     * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). When set, the default `user-agent` header is not added. Defaults to `nil`
     * `:impersonate_default_headers` - whether `:impersonate` also sends the browser's default headers. Defaults to `true`
+    * `:accept_encoding` - encodings to request and transparently decode (`CURLOPT_ACCEPT_ENCODING`). `""` means every
+      encoding this build supports (gzip, deflate, br, zstd), like curl's `--compressed`; a value such as `"gzip"` limits it;
+      `false` disables decoding and returns the raw body bytes (an impersonated browser still advertises its own
+      `accept-encoding`, so the server may compress anyway). Defaults to `""`
     * `:http_version` - one of `:http1_0`, `:http1_1`, `:http2`, `:http2_tls`, `:http2_prior_knowledge`, `:http3` (falls back if HTTP/3 fails) or `:http3_only`. Defaults to `nil` (curl's default, or the impersonated browser's)
 
   ## Fingerprint options

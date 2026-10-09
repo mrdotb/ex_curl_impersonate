@@ -29,6 +29,7 @@ defmodule ExCurlImpersonate.Request do
       impersonate: ?[]u8,
       impersonate_default_headers: bool,
       http_version: ?i64,
+      accept_encoding: ?[]u8,
   };
 
   pub const LongOpts = struct {
@@ -325,6 +326,14 @@ defmodule ExCurlImpersonate.Request do
 
       if (config.flags.proxy) |proxy| {
           setStringOpt(allocator, handle, cURL.CURLOPT_PROXY, proxy);
+      }
+
+      // "" = every encoding this libcurl supports; curl then decodes the body
+      if (config.flags.accept_encoding) |encoding| {
+          const c_encoding = try allocator.dupeZ(u8, encoding);
+          defer allocator.free(c_encoding);
+          const rc = cURL.curl_easy_setopt(handle, cURL.CURLOPT_ACCEPT_ENCODING, c_encoding.ptr);
+          if (rc != cURL.CURLE_OK) return rc;
       }
 
       if (config.flags.http_version) |version| {

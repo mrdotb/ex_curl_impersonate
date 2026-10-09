@@ -55,13 +55,18 @@ defmodule ExCurlImpersonate.RequestConfiguration do
         proxy: Keyword.get(opts, :proxy, nil),
         impersonate: impersonate(opts[:impersonate]),
         impersonate_default_headers: Keyword.get(opts, :impersonate_default_headers, true),
-        http_version: http_version(opts[:http_version])
+        http_version: http_version(opts[:http_version]),
+        accept_encoding: accept_encoding(Keyword.get(opts, :accept_encoding, ""))
       },
       long_opts: Map.new(@long_opts, &{&1, long_value(&1, opts[&1])}),
       string_opts: Map.new(@string_opts, &{&1, string_value(&1, opts[&1])}),
       slist_opts: Map.new(@slist_opts, &{&1, slist_value(&1, opts[&1])})
     }
   end
+
+  defp accept_encoding(false), do: nil
+  defp accept_encoding(encoding) when is_binary(encoding), do: encoding
+  defp accept_encoding(other), do: invalid!(:accept_encoding, "a string or false", other)
 
   defp long_value(_, nil), do: nil
   defp long_value(_, true), do: 1
