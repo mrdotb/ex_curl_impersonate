@@ -16,6 +16,7 @@ Success criteria:
 - `ExCurlImpersonate.get(url, impersonate: "chrome136")` produces a Chrome
   fingerprint as reported by a TLS echo service.
 - Every curl-impersonate `CURLOPT_*` addition is settable as a keyword option.
+- `http_version: :http3_only` completes a request over HTTP/3 (QUIC).
 
 ## Decisions
 
@@ -25,11 +26,11 @@ Success criteria:
 | API surface | `:impersonate` + `:impersonate_default_headers` + every added `CURLOPT_*` as a typed snake_case option |
 | Naming | Hex package `ex_curl_impersonate`, OTP app `:ex_curl_impersonate`, root module `ExCurlImpersonate`, repo `github.com/mrdotb/ex_curl_impersonate` |
 | Kerberos | Removed (`:http_auth_negotiate`, kerberos tests, CI setup) — libcurl-impersonate is built without GSS-API/SPNEGO |
+| HTTP version / HTTP/3 | New `:http_version` option (maps to `CURLOPT_HTTP_VERSION`); `Response.http_version` from `CURLINFO_HTTP_VERSION`. Verified: v2.2.3 is built with ngtcp2/nghttp3 and negotiates HTTP/3 with `chrome136` + `CURL_HTTP_VERSION_3ONLY` |
 | Redirect history (`CURLINFO_REDIRECT_HISTORY`) | Out of scope |
 
 ## Non-goals
 
-- HTTP/3 / QUIC enablement beyond exposing the options.
 - Kerberos / SPNEGO.
 - Windows, FreeBSD, Android, iOS targets.
 - Shipping precompiled NIFs.
@@ -106,6 +107,12 @@ New:
   options, so explicit options override the preset. Non-OK return →
   `{:error, <curl error name>}`.
 - `:impersonate_default_headers` — boolean, default `true`.
+- `:http_version` — one of `:http1_0`, `:http1_1`, `:http2`, `:http2_tls`,
+  `:http2_prior_knowledge`, `:http3` (attempt, fall back), `:http3_only`;
+  default `nil` (leave curl's default / the impersonate preset untouched).
+  Mapped in Elixir to the `CURL_HTTP_VERSION_*` value and passed to Zig as a
+  `?i64` flag; applied after `curl_easy_impersonate` so it overrides the preset.
+  Unknown atom → `ArgumentError` in `RequestConfiguration.build/3`.
 - When `:impersonate` is set, the implicit `user-agent: ex_curl_impersonate/<ver>`
   header is **not** added (user-supplied headers are still sent).
 
@@ -144,7 +151,8 @@ of the atoms above. `build/3` produces:
 %{
   ...,
   flags: %{...existing minus http_auth_negotiate...,
-           impersonate: nil | binary, impersonate_default_headers: boolean},
+           impersonate: nil | binary, impersonate_default_headers: boolean,
+           http_version: nil | integer},
   long_opts: %{tls_grease: nil | integer, ...},
   string_opts: %{http2_settings: nil | binary, ...},
   slist_opts: %{httpbaseheader: nil | [binary], ...}
@@ -156,14 +164,17 @@ Booleans in long opts are converted to `1`/`0` here.
 ### Zig side — `Request`
 
 - `RequestFlags` gains `impersonate: ?[]u8`, `impersonate_default_headers: bool`,
-  loses `http_auth_negotiate`.
+  `http_version: ?i64`, loses `http_auth_negotiate`.
+- `Response` gains `http_version: i64` read via `CURLINFO_HTTP_VERSION`;
+  Elixir `Response` exposes it as an atom (`:http1_0`, `:http1_1`, `:http2`,
+  `:http3`, or `nil` for 0/unknown).
 - New structs `LongOpts` (fields `?i64`), `StringOpts` (`?[]u8`),
   `SlistOpts` (`?[][]u8`), added to `RequestConfiguration`.
 - Comptime tables `long_opts`, `string_opts`, `slist_opts` of
   `.{ "field_name", cURL.CURLOPT_X }`, applied with `inline for`, setting only
   non-null fields — same pattern as existing `bool_flag_opts`.
-- Order in `setCurlOpts`: `curl_easy_impersonate` first, then existing opts,
-  then the three tables.
+- Order in `setCurlOpts`: `curl_easy_impersonate` first, then existing opts
+  (including `http_version`), then the three tables.
 - slist values are built with `curl_slist_append` and freed with
   `curl_slist_free_all` after `curl_easy_perform` (lifetimes must cover perform).
 - Failures from impersonate / new setopts return `beam.make_error_pair(code)`,
@@ -184,7 +195,9 @@ Booleans in long opts are converted to `1`/`0` here.
 
 - Existing test suite, renamed, minus Kerberos.
 - Unit: `RequestConfiguration.build/3` option mapping (bool→long, nil defaults,
-  no default user-agent when impersonating).
+  no default user-agent when impersonating, `:http_version` atom→value,
+  invalid `:http_version` raises).
+- Bypass: plain request reports `response.http_version == :http1_1`.
 - Bypass: with `impersonate: "chrome136"`, request carries Chrome default headers
   (e.g. `sec-ch-ua`) and no `ex_curl_impersonate/...` user-agent; with
   `impersonate_default_headers: false`, those headers are absent; invalid target
@@ -192,3 +205,6 @@ Booleans in long opts are converted to `1`/`0` here.
 - `@tag :external` (excluded by default): request `https://tls.peet.ws/api/all`
   with `impersonate: "chrome136"`, assert the reported HTTP/2 akamai fingerprint /
   JA4 matches Chrome's and differs from a non-impersonated request.
+- `@tag :external`: request `https://cloudflare-quic.com/` with
+  `impersonate: "chrome136", http_version: :http3_only`, assert
+  `{:ok, %{http_version: :http3}}`.
