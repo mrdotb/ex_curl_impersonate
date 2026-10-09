@@ -17,9 +17,12 @@ defmodule ExCurlImpersonate.ProxyTest do
   end
 
   test "fails when proxy is not running or reachable" do
-    assert {:error, "COULDNT_RESOLVE_PROXY"} =
+    assert {:error, reason} =
              ExCurlImpersonate.TestClient.get("https://httpbin.org/get",
                proxy: "nonexistent-host"
              )
+
+    # libcurl >= 8.x reports an unresolvable proxy as COULDNT_RESOLVE_HOST
+    assert reason in ["COULDNT_RESOLVE_PROXY", "COULDNT_RESOLVE_HOST"]
   end
 end
