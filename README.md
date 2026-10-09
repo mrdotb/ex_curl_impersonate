@@ -3,7 +3,12 @@
 Elixir bindings for [curl-impersonate](https://github.com/lexiforest/curl-impersonate) using Zig's C interoperability:
 make HTTP requests with the TLS (JA3/JA4) and HTTP/2/HTTP/3 fingerprints of real browsers.
 
-Fork of [ex_curl](https://github.com/danielrudn/ex_curl) by Daniel Rudnitski.
+> [!NOTE]
+> This is a fork of [ex_curl](https://github.com/danielrudn/ex_curl) by Daniel Rudnitski, adapted to link against
+> [curl-impersonate](https://github.com/lexiforest/curl-impersonate)'s `libcurl-impersonate` instead of the system libcurl.
+> On top of the original API it adds browser impersonation (`:impersonate`), HTTP version selection including HTTP/3
+> (`:http_version`) and every curl-impersonate fingerprint option. Kerberos (`:http_auth_negotiate`) was removed because
+> libcurl-impersonate is built without GSS-API.
 
 ## Installation
 
