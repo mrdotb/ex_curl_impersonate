@@ -37,12 +37,6 @@ ExCurlImpersonate.get("https://example.com", impersonate: "chrome136", tls_greas
 
 See the `ExCurlImpersonate` module docs for all options.
 
-## Licensing
-
-This package is MIT licensed. The downloaded `libcurl-impersonate` bundles curl, BoringSSL, nghttp2, nghttp3, ngtcp2,
-brotli, zstd, zlib and libidn2 (LGPL-3.0/GPL-2.0); their licenses are in the release tarball, extracted to
-`_build/<env>/curl_impersonate/`.
-
 ### HTTP Clients and Shared Defaults
 
 ```elixir
@@ -76,6 +70,12 @@ GitHubClient.user_repos("danielrudn")
 ```
 
 More examples and details on using `ExCurlImpersonate.Client` are available on the [ExCurlImpersonate.Client module documentation page](https://hexdocs.pm/ex_curl_impersonate/ExCurlImpersonate.Client.html).
+
+## Licensing
+
+This package is MIT licensed. The downloaded `libcurl-impersonate` bundles curl, BoringSSL, nghttp2, nghttp3, ngtcp2,
+brotli, zstd, zlib and libidn2 (LGPL-3.0/GPL-2.0); their licenses are in the release tarball, extracted to
+`_build/<env>/curl_impersonate/`.
 
 ## Documentation
 
