@@ -33,6 +33,8 @@ defmodule ExCurlImpersonate.Request do
   };
 
   pub const LongOpts = struct {
+      timeout_ms: ?i64,
+      connect_timeout_ms: ?i64,
       http2_no_priority: ?i64,
       http2_window_update: ?i64,
       http3_ssl_permute_extensions: ?i64,
@@ -56,6 +58,7 @@ defmodule ExCurlImpersonate.Request do
   pub const StringOpts = struct {
       cainfo: ?[]u8,
       capath: ?[]u8,
+      interface: ?[]u8,
       form_boundary: ?[]u8,
       http2_pseudo_headers_order: ?[]u8,
       http2_settings: ?[]u8,
@@ -239,6 +242,8 @@ defmodule ExCurlImpersonate.Request do
   }
 
   const long_opts = .{
+      .{ "timeout_ms", cURL.CURLOPT_TIMEOUT_MS },
+      .{ "connect_timeout_ms", cURL.CURLOPT_CONNECTTIMEOUT_MS },
       .{ "http2_no_priority", cURL.CURLOPT_HTTP2_NO_PRIORITY },
       .{ "http2_window_update", cURL.CURLOPT_HTTP2_WINDOW_UPDATE },
       .{ "http3_ssl_permute_extensions", cURL.CURLOPT_HTTP3_SSL_PERMUTE_EXTENSIONS },
@@ -262,6 +267,7 @@ defmodule ExCurlImpersonate.Request do
   const string_opts = .{
       .{ "cainfo", cURL.CURLOPT_CAINFO },
       .{ "capath", cURL.CURLOPT_CAPATH },
+      .{ "interface", cURL.CURLOPT_INTERFACE },
       .{ "form_boundary", cURL.CURLOPT_FORM_BOUNDARY },
       .{ "http2_pseudo_headers_order", cURL.CURLOPT_HTTP2_PSEUDO_HEADERS_ORDER },
       .{ "http2_settings", cURL.CURLOPT_HTTP2_SETTINGS },
@@ -326,6 +332,13 @@ defmodule ExCurlImpersonate.Request do
 
       if (config.flags.proxy) |proxy| {
           setStringOpt(allocator, handle, cURL.CURLOPT_PROXY, proxy);
+      }
+
+      // never let libcurl use signals (e.g. SIGALRM for resolver timeouts):
+      // we run on BEAM dirty scheduler threads
+      {
+          const rc = cURL.curl_easy_setopt(handle, cURL.CURLOPT_NOSIGNAL, @as(c_long, 1));
+          if (rc != cURL.CURLE_OK) return rc;
       }
 
       // enable the in-memory cookie engine so cookies set during redirects are

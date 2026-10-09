@@ -68,8 +68,8 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
       assert Enum.all?(Map.values(config.long_opts), &is_nil/1)
       assert Enum.all?(Map.values(config.string_opts), &is_nil/1)
       assert Enum.all?(Map.values(config.slist_opts), &is_nil/1)
-      assert map_size(config.long_opts) == 18
-      assert map_size(config.string_opts) == 22
+      assert map_size(config.long_opts) == 20
+      assert map_size(config.string_opts) == 23
       assert map_size(config.slist_opts) == 3
     end
 
@@ -123,6 +123,20 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
 
     assert_raise ArgumentError, ~r/:accept_encoding/, fn ->
       RequestConfiguration.build("GET", "http://x", accept_encoding: true)
+    end
+  end
+
+  test "timeouts must be non-negative integers" do
+    config =
+      RequestConfiguration.build("GET", "http://x", timeout_ms: 5_000, connect_timeout_ms: 0)
+
+    assert config.long_opts.timeout_ms == 5_000
+    assert config.long_opts.connect_timeout_ms == 0
+
+    for bad <- [true, -1, "5000"] do
+      assert_raise ArgumentError, ~r/:timeout_ms/, fn ->
+        RequestConfiguration.build("GET", "http://x", timeout_ms: bad)
+      end
     end
   end
 end

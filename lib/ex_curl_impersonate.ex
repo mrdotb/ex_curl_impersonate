@@ -12,6 +12,14 @@ defmodule ExCurlImpersonate do
     * `:return_metrics` - if request timing metrics should be included in the returned results, defaults to `false`
     * `:verbose` - if curl should output verbose logs to stdout, useful for debugging. Defaults to `false`
     * `:proxy` - proxy to use for transfers. Can be hostname or IP address with optional port number. Supports various proxy types (http, https, socks4, socks5). Defaults to `nil`
+    * `:timeout_ms` - maximum time in milliseconds for the whole request (`CURLOPT_TIMEOUT_MS`); on expiry the call
+      returns `{:error, "OPERATION_TIMEDOUT"}`. The call blocks its process (on a dirty IO scheduler) until curl returns,
+      so set this for anything talking to untrusted servers. Defaults to `nil` (no limit)
+    * `:connect_timeout_ms` - maximum time in milliseconds for the connection phase, including DNS, TCP, TLS and proxy
+      handshakes (`CURLOPT_CONNECTTIMEOUT_MS`). Defaults to `nil` (curl's default of 300 seconds)
+    * `:interface` - outgoing network interface, local IP address or hostname to bind to, like curl's `--interface`
+      (e.g. `"eth1"`, `"192.0.2.10"`, `"if!eth1"`, `"host!192.0.2.10"`). Returns `{:error, "INTERFACE_FAILED"}` if it
+      can't be used. Defaults to `nil`
     * `:cainfo` - path to a PEM CA bundle used to verify peers (curl-impersonate's built-in default is `/etc/ssl/certs/ca-certificates.crt` on Linux, `/etc/ssl/cert.pem` on macOS); set this on distros that keep it elsewhere, e.g. `/etc/pki/tls/certs/ca-bundle.crt`. Defaults to `nil`
     * `:capath` - path to a directory of hashed CA certificates used to verify peers (built-in default is `/etc/ssl/certs` on Linux); set this on distros that keep it elsewhere. Defaults to `nil`
     * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). When set, the default `user-agent` header is not added. Defaults to `nil`

@@ -10,14 +10,14 @@ defmodule ExCurlImpersonate.RequestConfiguration do
             string_opts: %{},
             slist_opts: %{}
 
-  # curl-impersonate CURLOPT_* additions; names must match the Zig tables in ExCurlImpersonate.Request
-  @long_opts ~w(http2_no_priority http2_window_update http3_ssl_permute_extensions
+  # plain curl options and curl-impersonate CURLOPT_* additions; names must match the Zig tables in ExCurlImpersonate.Request
+  @long_opts ~w(timeout_ms connect_timeout_ms http2_no_priority http2_window_update http3_ssl_permute_extensions
                 proxy_credential_no_reuse quic_initial_packet_number split_cookies
                 ssl_enable_alps ssl_enable_ticket ssl_permute_extensions stream_exclusive
                 tls_grease tls_key_shares_limit tls_key_usage_no_check tls_record_size_limit
                 tls_signed_cert_timestamps tls_status_request tls_use_new_alps_codepoint
                 ws_ssl_disable_ticket)a
-  @string_opts ~w(cainfo capath form_boundary http2_pseudo_headers_order http2_settings http2_streams
+  @string_opts ~w(cainfo capath interface form_boundary http2_pseudo_headers_order http2_settings http2_streams
                   http3_httpheader_order http3_pseudo_headers_order http3_settings
                   http3_sig_hash_algs http3_ssl_ec_curves http3_tls_extension_order
                   httpheader_order quic_cid_length quic_transport_parameters
@@ -69,6 +69,13 @@ defmodule ExCurlImpersonate.RequestConfiguration do
   defp accept_encoding(other), do: invalid!(:accept_encoding, "a string or false", other)
 
   defp long_value(_, nil), do: nil
+
+  defp long_value(key, value) when key in [:timeout_ms, :connect_timeout_ms] do
+    if is_integer(value) and value >= 0,
+      do: value,
+      else: invalid!(key, "a non-negative integer (milliseconds)", value)
+  end
+
   defp long_value(_, true), do: 1
   defp long_value(_, false), do: 0
   defp long_value(_, value) when is_integer(value), do: value
