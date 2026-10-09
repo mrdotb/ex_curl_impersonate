@@ -7,6 +7,10 @@ defmodule ExCurlImpersonateTest do
     {:ok, bypass: bypass}
   end
 
+  test "is linked against libcurl-impersonate" do
+    assert ExCurlImpersonate.curl_version() =~ "IMPERSONATE"
+  end
+
   test "can send a GET request", %{bypass: bypass} do
     Bypass.expect(bypass, "GET", "/test", fn conn ->
       Plug.Conn.send_resp(conn, 200, "OK")

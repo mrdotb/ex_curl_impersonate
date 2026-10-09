@@ -4,7 +4,6 @@ in {
   packages = [
     unstable-pkgs.zig_0_16
     unstable-pkgs.beam29Packages.elixir_1_20
-    pkgs.curl
   ];
 
   enterTest = ''

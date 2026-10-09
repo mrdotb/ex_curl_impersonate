@@ -46,6 +46,10 @@ jobs:
             ~/.asdf
             deps
           key: mix-deps-${{ hashFiles('**/mix.lock') }}-${{ matrix.pair.elixir }}-${{ matrix.pair.otp }}
+      - uses: actions/cache@v4
+        with:
+          path: _build/test/curl_impersonate
+          key: curl-impersonate-2.2.3-${{ runner.os }}-${{ runner.arch }}
       - run: mix test
   ci-ubuntu:
     runs-on: ubuntu-latest
@@ -68,12 +72,6 @@ jobs:
             lint: lint
     steps:
       - uses: actions/checkout@v4
-
-      - name: Install test dependencies
-        run: sudo apt-get update && sudo apt-get install -y libcurl4-openssl-dev krb5-{user,kdc,admin-server}
-
-      - name: Setup Kerberos environment and initialize configuration
-        run: sudo ./test/support/files/setup_kerberos.sh
 
       - uses: goto-bus-stop/setup-zig@v2
         with:
@@ -98,13 +96,18 @@ jobs:
       - run: mix deps.unlock --check-unused
         if: ${{ matrix.lint }}
 
+      - uses: actions/cache@v4
+        with:
+          path: _build/test/curl_impersonate
+          key: curl-impersonate-2.2.3-${{ runner.os }}-${{ runner.arch }}
+
       - run: mix deps.compile
 
       - run: mix compile --warnings-as-errors
         if: ${{ matrix.lint }}
 
-      - run: mix test --include kerberos:true
+      - run: mix test
         if: ${{ ! matrix.lint }}
 
-      - run: mix test --warnings-as-errors --include kerberos:true
+      - run: mix test --warnings-as-errors
         if: ${{ matrix.lint }}

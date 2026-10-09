@@ -1,9 +1,13 @@
 defmodule ExCurlImpersonate.Request do
   @moduledoc false
+  # build script lives outside lib/ so it is not part of the runtime app
+  @external_resource Path.expand("../build/curl_impersonate.ex", __DIR__)
+  Code.require_file("../build/curl_impersonate.ex", __DIR__)
+
   use Zig,
     otp_app: :ex_curl_impersonate,
-    c: [link_lib: {:system, "curl"}],
-    nifs: [request: [:dirty_io]]
+    c: ExCurlImpersonate.Build.zig_c_opts(),
+    nifs: [request: [:dirty_io], curl_version: []]
 
   ~Z"""
   const beam = @import("beam");
@@ -46,6 +50,10 @@ defmodule ExCurlImpersonate.Request do
       headers: []u8,
       metrics: ?ResponseMetrics,
   };
+
+  pub fn curl_version() []const u8 {
+      return std.mem.sliceTo(cURL.curl_version(), 0);
+  }
 
   pub fn request(config: RequestConfiguration) !beam.term {
       // initialize curl and vars

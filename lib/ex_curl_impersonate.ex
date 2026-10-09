@@ -214,6 +214,11 @@ defmodule ExCurlImpersonate do
     end
   end
 
+  @doc """
+  Returns the version string of the linked libcurl, e.g. `"libcurl/8.22.0-IMPERSONATE BoringSSL/..."`.
+  """
+  def curl_version, do: Request.curl_version()
+
   defp do_request(%RequestConfiguration{} = config, _opts) do
     Request.request(config)
   end
