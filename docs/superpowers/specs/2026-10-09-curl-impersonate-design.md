@@ -22,7 +22,8 @@ Success criteria:
 
 | Topic | Decision |
 |---|---|
-| Library source | Download pinned prebuilt release tarball at compile time, verify SHA-256, link the static `.a` |
+| Library source | Download pinned prebuilt release tarball at compile time, verify SHA-256, link the shared library dynamically; ship it in `priv/lib` next to the NIF, found via `$ORIGIN` / `@loader_path` rpath |
+| Toolchain | `mise.toml` pins erlang 29.1.1, elixir 1.20.4-otp-29, zig 0.16.0 |
 | API surface | `:impersonate` + `:impersonate_default_headers` + every added `CURLOPT_*` as a typed snake_case option |
 | Naming | Hex package `ex_curl_impersonate`, OTP app `:ex_curl_impersonate`, root module `ExCurlImpersonate`, repo `github.com/mrdotb/ex_curl_impersonate` |
 | Kerberos | Removed (`:http_auth_negotiate`, kerberos tests, CI setup) — libcurl-impersonate is built without GSS-API/SPNEGO |
@@ -37,54 +38,86 @@ Success criteria:
 
 ## Part 1 — Build & linking
 
+### Why dynamic, not static
+
+Linking the 64 MB `libcurl-impersonate.a` crashes Zig 0.16's default Debug
+toolchain (self-hosted backend/linker SEGV, reproduced with a 2-line Zig program;
+`-fllvm -flld` or ReleaseSafe link fine). Zigler 0.16 always runs a Debug "sema"
+build that links every `link_lib`, and has no option to force LLVM. Linking the
+shared library works. Verified end to end: NIF built with
+`link_lib: "<dir>/libcurl-impersonate.so"` + `rpaths: [{:special, "$ORIGIN"}]`
+has `NEEDED libcurl-impersonate.so.4`, `RUNPATH $ORIGIN`, and performs real
+requests once `libcurl-impersonate.so.4` sits next to it in `priv/lib/`.
+
 ### Pinned release
 
-`mix.exs` (or a build module it reads) holds:
+`ExCurlImpersonate.Build` holds:
 
-- `@curl_impersonate_version "2.2.3"`
-- a map `target_triple => sha256` for the `libcurl-impersonate-v<ver>.<triple>.tar.gz`
-  assets of these triples:
-  `x86_64-linux-gnu`, `aarch64-linux-gnu`, `x86_64-linux-musl`,
-  `aarch64-linux-musl`, `arm64-macos`, `x86_64-macos`.
+- `@version "2.2.3"`
+- `@checksums` (SHA-256 of `libcurl-impersonate-v2.2.3.<triple>.tar.gz`, from the
+  GitHub release asset digests):
+
+| triple | sha256 |
+|---|---|
+| `x86_64-linux-gnu` | `d5eb746c109be4d945cc5fcbe8a5c4940471041be4901439d50111cc3c83359d` |
+| `aarch64-linux-gnu` | `4718401d263208866769825e97ea5f2ae20bfc3e991e617c3c85408df821475a` |
+| `x86_64-linux-musl` | `46333ccae3ea5865e27bf11d1a8f30a9f3563cb5aab7ec4aec9b52a3f7d401b5` |
+| `aarch64-linux-musl` | `3c7104315f853268e6b289f64627fdf7df1a466a8a8d4da2d313c182dcbc0d34` |
+| `arm64-macos` | `16a73c8dfc55cb8c2354f93f43525529d0df6cbfc484fb7a4357b3891f9dbb6a` |
+| `x86_64-macos` | `32634096e31e879d0a193f87e4a4083e2eb44b9b9318eb5b32f85f495104a049` |
+
+Shared-library file names inside the tarballs:
+
+| OS | real file | soname / install name (what the NIF records) |
+|---|---|---|
+| Linux | `libcurl-impersonate.so.4.8.0` | `libcurl-impersonate.so.4` |
+| macOS | `libcurl-impersonate.4.8.0.dylib` | `@rpath/libcurl-impersonate.4.dylib` |
 
 ### Fetch step — `ExCurlImpersonate.Build`
 
-Runs before Zigler compiles the NIF (invoked at compile time from the module
-that does `use Zig`, so the path is known when the `use` options are evaluated).
+Called at compile time from the module that does `use Zig` (its return value
+feeds the `use Zig` options).
 
 1. If `CURL_IMPERSONATE_DIR` is set, use it as-is (must contain `include/curl/curl.h`
-   and `libcurl-impersonate.a`). Used for offline builds, Nix, unsupported platforms.
+   and the shared library). Used for offline builds, Nix, unsupported platforms.
 2. Otherwise detect the host triple from `:erlang.system_info(:system_architecture)`;
-   on Linux, distinguish musl vs glibc (e.g. `ldd --version` output or presence of
-   `/lib/ld-musl-*`).
-3. Target dir: `_build/curl_impersonate/<version>/<triple>/`. If it already contains
-   the `.a` and headers, skip.
-4. Download the asset via `:httpc` (with `:ssl` + `:public_key` verification using
-   OTP's `:public_key.cacerts_get/0`), verify SHA-256 against the pinned map, extract
-   with `:erl_tar`.
-5. Unknown triple and no env var → `Mix.raise` with a message naming the
-   detected triple and the env-var escape hatch. Checksum mismatch → `Mix.raise`.
+   on Linux, musl vs glibc by checking for `/lib/ld-musl-*`.
+3. Cache dir: `Path.join(Mix.Project.build_path(), "curl_impersonate/<version>/<triple>")`.
+   Skip download if it already holds the headers and shared library.
+4. Download via `:httpc` (TLS verification with `:public_key.cacerts_get/0`),
+   verify SHA-256, extract with `:erl_tar`.
+5. Copy the real shared library into `Path.join(Mix.Project.app_path(), "priv/lib")`
+   under its soname file name (`libcurl-impersonate.so.4` /
+   `libcurl-impersonate.4.dylib`) — this is where Zigler writes the NIF, so it ends
+   up in releases too.
+6. Unknown triple and no env var → `Mix.raise` naming the detected triple and the
+   env-var escape hatch. Checksum mismatch → `Mix.raise`.
+
+Returns `%{include_dir: ..., link_lib: ...}` for the Zigler config.
 
 ### Zigler configuration
 
-Replace `c: [link_lib: {:system, "curl"}]` with include dir = `<dir>/include`,
-link the static `<dir>/libcurl-impersonate.a`, and link libc++ (BoringSSL is C++;
-verified: `zig cc v.c libcurl-impersonate.a -lc++` links and
-`curl_easy_impersonate(h, "chrome136", 1)` returns `CURLE_OK`). Exact Zigler 0.16
-option names for a static archive / libc++ are confirmed during implementation;
-fallback is passing them as raw linker args.
+```elixir
+c: [
+  include_dirs: lib.include_dir,
+  link_lib: lib.link_lib,            # path to the shared library in the cache dir
+  rpaths: [{:special, "$ORIGIN"}]    # "@loader_path" on macOS
+]
+```
 
-Result: one self-contained NIF; no runtime dependency on system curl.
+Result: NIF + `libcurl-impersonate` side by side in `priv/lib/`; no dependency on
+system curl.
 
 ### Repo / CI changes
 
-- `devenv.nix`: drop `pkgs.curl`.
+- `devenv.nix`: drop `pkgs.curl`. Add `mise.toml` (see Toolchain).
 - CI: drop `libcurl4-openssl-dev` and the Kerberos setup step + `--include kerberos:true`;
-  keep ubuntu + macOS matrices; cache `_build/curl_impersonate`.
+  keep ubuntu + macOS matrices; cache `_build/<env>/curl_impersonate`.
 - Delete `test/kerberos_test.exs`, `test/support/files/setup_kerberos.sh`.
 - README: new name, install instructions, supported platforms, `CURL_IMPERSONATE_DIR`,
-  note that BoringSSL/curl/nghttp2/brotli/zstd/zlib/libidn2 (LGPL) are statically
-  linked into the user-built NIF, with pointers to the bundled LICENSE files.
+  note that the downloaded `libcurl-impersonate` (bundling BoringSSL, curl, nghttp2/3,
+  ngtcp2, brotli, zstd, zlib, libidn2 (LGPL)) is shipped in `priv/lib`, with pointers
+  to the LICENSE files in the release tarball.
 - `package/0`: new name, description, links, maintainers; keep MIT and credit upstream ex_curl.
 
 ## Part 2 — API & Zig side
@@ -190,6 +223,7 @@ Booleans in long opts are converted to `1`/`0` here.
 | setopt rejects a new option value | `{:error, "<CURLE name>"}` |
 | Unsupported build platform w/o env var | compile-time `Mix.raise` |
 | Download / checksum failure | compile-time `Mix.raise` |
+| Shared library missing at load time | NIF `:on_load` fails with the dlopen error (only possible if `priv/lib` was tampered with) |
 
 ## Testing
 
