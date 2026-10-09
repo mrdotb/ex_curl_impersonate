@@ -80,8 +80,8 @@ feeds the `use Zig` options).
 
 1. If `CURL_IMPERSONATE_DIR` is set, use it as-is (must contain `include/curl/curl.h`
    and the shared library). Used for offline builds, Nix, unsupported platforms.
-2. Otherwise detect the host triple from `:erlang.system_info(:system_architecture)`;
-   on Linux, musl vs glibc by checking for `/lib/ld-musl-*`.
+2. Otherwise detect the host triple from `:erlang.system_info(:system_architecture)`
+   (OTP reports the libc too, e.g. `x86_64-pc-linux-musl`).
 3. Cache dir: `Path.join(Mix.Project.build_path(), "curl_impersonate/<version>/<triple>")`.
    Skip download if it already holds the headers and shared library.
 4. Download via `:httpc` (TLS verification with `:public_key.cacerts_get/0`),
@@ -93,7 +93,7 @@ feeds the `use Zig` options).
 6. Unknown triple and no env var → `Mix.raise` naming the detected triple and the
    env-var escape hatch. Checksum mismatch → `Mix.raise`.
 
-Returns `%{include_dir: ..., link_lib: ...}` for the Zigler config.
+Returns the Zigler `c:` keyword list (below). The script lives in `build/curl_impersonate.ex`, outside `lib/`, and is loaded with `Code.require_file` from `lib/request.ex` (verified: Zigler evaluates a computed `c:` option).
 
 ### Zigler configuration
 
