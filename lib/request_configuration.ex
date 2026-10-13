@@ -11,7 +11,7 @@ defmodule ExCurlImpersonate.RequestConfiguration do
             slist_opts: %{}
 
   # plain curl options and curl-impersonate CURLOPT_* additions; names must match the Zig tables in ExCurlImpersonate.Request
-  @long_opts ~w(timeout_ms connect_timeout_ms http2_no_priority http2_window_update http3_ssl_permute_extensions
+  @long_opts ~w(timeout_ms connect_timeout_ms ip_resolve http2_no_priority http2_window_update http3_ssl_permute_extensions
                 proxy_credential_no_reuse quic_initial_packet_number split_cookies
                 ssl_enable_alps ssl_enable_ticket ssl_permute_extensions stream_exclusive
                 tls_grease tls_key_shares_limit tls_key_usage_no_check tls_record_size_limit
@@ -24,7 +24,7 @@ defmodule ExCurlImpersonate.RequestConfiguration do
                   ssl_cert_compression ssl_sig_hash_algs tls_delegated_credentials
                   tls_extension_order tls_trust_anchors ws_httpheader_order
                   ws_ssl_cert_compression)a
-  @slist_opts ~w(httpbaseheader http3_httpheader ws_httpheader)a
+  @slist_opts ~w(httpbaseheader http3_httpheader ws_httpheader resolve)a
 
   def long_opts, do: @long_opts
   def string_opts, do: @string_opts
@@ -75,6 +75,12 @@ defmodule ExCurlImpersonate.RequestConfiguration do
       do: value,
       else: invalid!(key, "a non-negative integer (milliseconds)", value)
   end
+
+  # CURL_IPRESOLVE_WHATEVER / _V4 / _V6
+  defp long_value(:ip_resolve, :any), do: 0
+  defp long_value(:ip_resolve, :v4), do: 1
+  defp long_value(:ip_resolve, :v6), do: 2
+  defp long_value(:ip_resolve, value), do: invalid!(:ip_resolve, ":any, :v4 or :v6", value)
 
   defp long_value(_, true), do: 1
   defp long_value(_, false), do: 0

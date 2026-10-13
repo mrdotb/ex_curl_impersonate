@@ -68,9 +68,9 @@ defmodule ExCurlImpersonate.RequestConfigurationTest do
       assert Enum.all?(Map.values(config.long_opts), &is_nil/1)
       assert Enum.all?(Map.values(config.string_opts), &is_nil/1)
       assert Enum.all?(Map.values(config.slist_opts), &is_nil/1)
-      assert map_size(config.long_opts) == 20
+      assert map_size(config.long_opts) == 21
       assert map_size(config.string_opts) == 23
-      assert map_size(config.slist_opts) == 3
+      assert map_size(config.slist_opts) == 4
     end
 
     test "booleans become 1/0 and false is not dropped" do

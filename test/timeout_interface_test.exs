@@ -40,4 +40,32 @@ defmodule ExCurlImpersonate.TimeoutInterfaceTest do
     assert {:error, "INTERFACE_FAILED"} =
              TestClient.get("http://127.0.0.1:1/", interface: "nonexistent-if0")
   end
+
+  test "resolve pins a name to an address", %{bypass: bypass} do
+    Bypass.expect(bypass, "GET", "/pinned", &Plug.Conn.send_resp(&1, 200, "pinned"))
+
+    assert {:ok, %{body: "pinned"}} =
+             TestClient.get("http://pinned.invalid:#{bypass.port}/pinned",
+               resolve: ["pinned.invalid:#{bypass.port}:127.0.0.1"]
+             )
+  end
+
+  test "without resolve the same name does not resolve" do
+    assert {:error, "COULDNT_RESOLVE_HOST"} = TestClient.get("http://pinned.invalid:1/")
+  end
+
+  test "ip_resolve restricts the address family", %{bypass: bypass} do
+    Bypass.expect(bypass, "GET", "/family", &Plug.Conn.send_resp(&1, 200, "ok"))
+    pin = ["dual.invalid:#{bypass.port}:127.0.0.1"]
+    url = "http://dual.invalid:#{bypass.port}/family"
+
+    assert {:ok, %{body: "ok"}} = TestClient.get(url, resolve: pin, ip_resolve: :v4)
+    assert {:error, _reason} = TestClient.get(url, resolve: pin, ip_resolve: :v6)
+  end
+
+  test "ip_resolve rejects anything but :any, :v4 and :v6" do
+    assert_raise ArgumentError, ~r/:ip_resolve/, fn ->
+      TestClient.get("http://127.0.0.1:1/", ip_resolve: :ipv6)
+    end
+  end
 end

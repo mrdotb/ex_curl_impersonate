@@ -20,6 +20,13 @@ defmodule ExCurlImpersonate do
     * `:interface` - outgoing network interface, local IP address or hostname to bind to, like curl's `--interface`
       (e.g. `"eth1"`, `"192.0.2.10"`, `"if!eth1"`, `"host!192.0.2.10"`). Returns `{:error, "INTERFACE_FAILED"}` if it
       can't be used. Defaults to `nil`
+    * `:ip_resolve` - which IP version names resolve to (`CURLOPT_IPRESOLVE`): `:v4`, `:v6` or `:any`. It applies to
+      every name curl resolves for the transfer, the proxy's included, so through a proxy reached over IPv4 `:v6` fails
+      to connect; use `:resolve` to choose the target's address family there. Defaults to `nil` (`:any`)
+    * `:resolve` - list of `"host:port:address"` entries that pin a name to an address, like curl's `--resolve`
+      (e.g. `["www.example.com:443:[2001:db8::1]"]`). With a `socks5://` proxy (not `socks5h://`) the pinned address
+      is what the proxy is asked to connect to, which is how to choose IPv4 or IPv6 for a target through a proxy.
+      Defaults to `nil`
     * `:cainfo` - path to a PEM CA bundle used to verify peers (curl-impersonate's built-in default is `/etc/ssl/certs/ca-certificates.crt` on Linux, `/etc/ssl/cert.pem` on macOS); set this on distros that keep it elsewhere, e.g. `/etc/pki/tls/certs/ca-bundle.crt`. Defaults to `nil`
     * `:capath` - path to a directory of hashed CA certificates used to verify peers (built-in default is `/etc/ssl/certs` on Linux); set this on distros that keep it elsewhere. Defaults to `nil`
     * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). When set, the default `user-agent` header is not added. Defaults to `nil`

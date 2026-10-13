@@ -35,6 +35,7 @@ defmodule ExCurlImpersonate.Request do
   pub const LongOpts = struct {
       timeout_ms: ?i64,
       connect_timeout_ms: ?i64,
+      ip_resolve: ?i64,
       http2_no_priority: ?i64,
       http2_window_update: ?i64,
       http3_ssl_permute_extensions: ?i64,
@@ -85,6 +86,7 @@ defmodule ExCurlImpersonate.Request do
       httpbaseheader: ?[][]u8,
       http3_httpheader: ?[][]u8,
       ws_httpheader: ?[][]u8,
+      resolve: ?[][]u8,
   };
 
   pub const RequestConfiguration = struct {
@@ -244,6 +246,7 @@ defmodule ExCurlImpersonate.Request do
   const long_opts = .{
       .{ "timeout_ms", cURL.CURLOPT_TIMEOUT_MS },
       .{ "connect_timeout_ms", cURL.CURLOPT_CONNECTTIMEOUT_MS },
+      .{ "ip_resolve", cURL.CURLOPT_IPRESOLVE },
       .{ "http2_no_priority", cURL.CURLOPT_HTTP2_NO_PRIORITY },
       .{ "http2_window_update", cURL.CURLOPT_HTTP2_WINDOW_UPDATE },
       .{ "http3_ssl_permute_extensions", cURL.CURLOPT_HTTP3_SSL_PERMUTE_EXTENSIONS },
@@ -294,6 +297,7 @@ defmodule ExCurlImpersonate.Request do
       .{ "httpbaseheader", cURL.CURLOPT_HTTPBASEHEADER },
       .{ "http3_httpheader", cURL.CURLOPT_HTTP3_HTTPHEADER },
       .{ "ws_httpheader", cURL.CURLOPT_WS_HTTPHEADER },
+      .{ "resolve", cURL.CURLOPT_RESOLVE },
   };
 
   const bool_flag_opts = .{
