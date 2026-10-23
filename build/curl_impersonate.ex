@@ -120,7 +120,10 @@ defmodule ExCurlImpersonate.Build do
       customize_hostname_check: [match_fun: :public_key.pkix_verify_hostname_match_fun(:https)]
     ]
 
-    case :httpc.request(:get, {String.to_charlist(url), []}, [ssl: ssl], body_format: :binary) do
+    # GitHub's headers (mostly content-security-policy) exceed httpc's 10240 byte default
+    opts = [body_format: :binary, max_header_size: 65_536]
+
+    case :httpc.request(:get, {String.to_charlist(url), []}, [ssl: ssl], opts) do
       {:ok, {{_, 200, _}, _headers, body}} -> body
       other -> Mix.raise("Failed to download #{url}: #{inspect(other)}")
     end
