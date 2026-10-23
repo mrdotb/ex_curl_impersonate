@@ -15,14 +15,16 @@ make HTTP requests with the TLS (JA3/JA4) and HTTP/2/HTTP/3 fingerprints of real
 ```elixir
 def deps do
   [
-    {:ex_curl_impersonate, "~> 0.1.0"}
+    {:ex_curl_impersonate, "~> 0.2.0"}
   ]
 end
 ```
 
 Compiling requires [Zig 0.16](https://ziglang.org/download/) (or let Zigler fetch it). No system curl is needed: the pinned
-`libcurl-impersonate` v2.2.3 release for your platform is downloaded at compile time, checksum-verified and shipped in
-`priv/lib/` next to the NIF.
+`libcurl-impersonate` v2.3.0 release for your platform is downloaded at compile time, checksum-verified and shipped in
+`priv/lib/` next to the NIF. On Linux x86_64 (glibc) the release comes from
+[our fork](https://github.com/mrdotb/curl-impersonate), which adds the `chrome153`–`chrome155` targets (plus `_macos`
+and `_linux` variants).
 
 Zigler prefers its own toolchain in `~/.cache/zigler` and otherwise falls back to the first `zig` on your `PATH`. If an
 older Zig is on `PATH` you will see errors like `build.zig.zon: error: expected string literal`; fix it by running

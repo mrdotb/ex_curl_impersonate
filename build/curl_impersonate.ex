@@ -4,19 +4,26 @@ defmodule ExCurlImpersonate.Build do
   # host, installs the shared library next to the NIF and returns the Zigler
   # `c:` options. Loaded via Code.require_file from lib/request.ex.
 
-  @version "2.2.3"
-  @base_url "https://github.com/lexiforest/curl-impersonate/releases/download"
-  @checksums %{
-    "x86_64-linux-gnu" => "d5eb746c109be4d945cc5fcbe8a5c4940471041be4901439d50111cc3c83359d",
-    "aarch64-linux-gnu" => "4718401d263208866769825e97ea5f2ae20bfc3e991e617c3c85408df821475a",
-    "x86_64-linux-musl" => "46333ccae3ea5865e27bf11d1a8f30a9f3563cb5aab7ec4aec9b52a3f7d401b5",
-    "aarch64-linux-musl" => "3c7104315f853268e6b289f64627fdf7df1a466a8a8d4da2d313c182dcbc0d34",
-    "arm64-macos" => "16a73c8dfc55cb8c2354f93f43525529d0df6cbfc484fb7a4357b3891f9dbb6a",
-    "x86_64-macos" => "32634096e31e879d0a193f87e4a4083e2eb44b9b9318eb5b32f85f495104a049"
+  @upstream "https://github.com/lexiforest/curl-impersonate/releases/download"
+  # x86_64-linux-gnu comes from our fork, which adds the chrome153-155 targets
+  @fork "https://github.com/mrdotb/curl-impersonate/releases/download"
+  @releases %{
+    "x86_64-linux-gnu" =>
+      {@fork, "2.3.0-chrome155", "805609c1ae31ff64fb906c9116c67b357aa15857c9b82b106c3e832466a4a0a5"},
+    "aarch64-linux-gnu" =>
+      {@upstream, "2.3.0", "1b2ab0089581ea0bdf6bfeddfcf5914fdf70be0958eacc373a040c2db8452da9"},
+    "x86_64-linux-musl" =>
+      {@upstream, "2.3.0", "6072f907b75e958a91ffebf1188afc79c18fafde715656cdc6c3ae0a1ec04fdb"},
+    "aarch64-linux-musl" =>
+      {@upstream, "2.3.0", "0925c2b1ab597a1fd2dd003a25158daf1183e881eab02b09fbec61c5286da928"},
+    "arm64-macos" =>
+      {@upstream, "2.3.0", "7bee77efd2917c606647397d75d6b218e3bcd1234adf8bfbf28e2a7bd9cec8b4"},
+    "x86_64-macos" =>
+      {@upstream, "2.3.0", "0ac304126efef6de2cbebedd3e22f38cf2cddf76408db0e02e1d8583c4c9960f"}
   }
 
-  def version, do: @version
-  def checksum(triple), do: Map.fetch!(@checksums, triple)
+  def version(triple), do: elem(Map.fetch!(@releases, triple), 1)
+  def checksum(triple), do: elem(Map.fetch!(@releases, triple), 2)
 
   def zig_c_opts do
     os = host_os()
@@ -83,12 +90,13 @@ defmodule ExCurlImpersonate.Build do
         and libcurl-impersonate.so (or .dylib).
         """)
 
-    dir = Path.join([Mix.Project.build_path(), "curl_impersonate", @version, triple])
+    {base_url, version, _} = Map.fetch!(@releases, triple)
+    dir = Path.join([Mix.Project.build_path(), "curl_impersonate", version, triple])
 
     unless File.exists?(Path.join(dir, "include/curl/curl.h")) do
-      asset = "libcurl-impersonate-v#{@version}.#{triple}.tar.gz"
+      asset = "libcurl-impersonate-v#{version}.#{triple}.tar.gz"
       Mix.shell().info("Downloading #{asset}")
-      data = download!("#{@base_url}/v#{@version}/#{asset}")
+      data = download!("#{base_url}/v#{version}/#{asset}")
       verify_checksum!(data, checksum(triple))
 
       tmp = dir <> ".tmp"
