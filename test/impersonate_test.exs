@@ -38,6 +38,26 @@ defmodule ExCurlImpersonate.ImpersonateTest do
     assert headers["user-agent"] == "mine"
   end
 
+  # chrome153-155 only exist in our fork's build, used on x86_64-linux-gnu
+  @fork_build ExCurlImpersonate.Build.triple(
+                List.to_string(:erlang.system_info(:system_architecture))
+              ) == "x86_64-linux-gnu"
+
+  for major <- 153..155,
+      {suffix, platform} <- [{"", "Windows"}, {"_macos", "macOS"}, {"_linux", "Linux"}] do
+    target = "chrome#{major}#{suffix}"
+
+    unless @fork_build, do: @tag(skip: "#{target} is only in the x86_64-linux-gnu build")
+
+    test "impersonate #{target}", %{bypass: bypass} do
+      echo_headers(bypass)
+      headers = get_headers(bypass, impersonate: unquote(target))
+      assert headers["sec-ch-ua"] =~ ~s("Google Chrome";v="#{unquote(major)}")
+      assert headers["sec-ch-ua-platform"] == ~s("#{unquote(platform)}")
+      assert headers["user-agent"] =~ "Chrome/#{unquote(major)}.0.0.0"
+    end
+  end
+
   test "unknown impersonate target returns an error" do
     assert {:error, "BAD_FUNCTION_ARGUMENT"} =
              ExCurlImpersonate.get("http://localhost:1/", impersonate: "netscape4")
