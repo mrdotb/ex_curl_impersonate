@@ -5,21 +5,21 @@ defmodule ExCurlImpersonate.Build do
   # `c:` options. Loaded via Code.require_file from lib/request.ex.
 
   @upstream "https://github.com/lexiforest/curl-impersonate/releases/download"
-  # x86_64-linux-gnu comes from our fork, which adds the chrome153-155 targets
+  # x86_64-linux-gnu comes from our fork, which adds the chrome153-157 targets
   @fork "https://github.com/mrdotb/curl-impersonate/releases/download"
   @releases %{
     "x86_64-linux-gnu" =>
-      {@fork, "2.3.0-chrome155", "805609c1ae31ff64fb906c9116c67b357aa15857c9b82b106c3e832466a4a0a5"},
+      {@fork, "2.3.2-chrome157", "7f093a47c0d1c40013b1a9b6a5e047dcf0f53f714a1041b43ee2ce52c9696001"},
     "aarch64-linux-gnu" =>
-      {@upstream, "2.3.0", "1b2ab0089581ea0bdf6bfeddfcf5914fdf70be0958eacc373a040c2db8452da9"},
+      {@upstream, "2.3.2", "1cb74a3b5103df020c252f9efef5a779c87380ee6244b365a90a0e4f7086864e"},
     "x86_64-linux-musl" =>
-      {@upstream, "2.3.0", "6072f907b75e958a91ffebf1188afc79c18fafde715656cdc6c3ae0a1ec04fdb"},
+      {@upstream, "2.3.2", "117ace4923c168d38bc87e7e4c4f55ebe2b14c1714829c76b95a77a8f0b9c059"},
     "aarch64-linux-musl" =>
-      {@upstream, "2.3.0", "0925c2b1ab597a1fd2dd003a25158daf1183e881eab02b09fbec61c5286da928"},
+      {@upstream, "2.3.2", "9cb9959f25271ee457a16fb3f5e2bd0c3fccd0a45cf0d4b97ed2d59f310737d6"},
     "arm64-macos" =>
-      {@upstream, "2.3.0", "7bee77efd2917c606647397d75d6b218e3bcd1234adf8bfbf28e2a7bd9cec8b4"},
+      {@upstream, "2.3.2", "6c0dc841a8f6b7a8f81a0f55197e8241405fb7dcd97df180e66fc6f796c42bd5"},
     "x86_64-macos" =>
-      {@upstream, "2.3.0", "0ac304126efef6de2cbebedd3e22f38cf2cddf76408db0e02e1d8583c4c9960f"}
+      {@upstream, "2.3.2", "eed3342d8768065ab7a9106f4286d9101959b7e9e1b2b969eb8d8be1a52422cd"}
   }
 
   def version(triple), do: elem(Map.fetch!(@releases, triple), 1)

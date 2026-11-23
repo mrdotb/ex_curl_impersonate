@@ -29,7 +29,7 @@ defmodule ExCurlImpersonate do
       Defaults to `nil`
     * `:cainfo` - path to a PEM CA bundle used to verify peers (curl-impersonate's built-in default is `/etc/ssl/certs/ca-certificates.crt` on Linux, `/etc/ssl/cert.pem` on macOS); set this on distros that keep it elsewhere, e.g. `/etc/pki/tls/certs/ca-bundle.crt`. Defaults to `nil`
     * `:capath` - path to a directory of hashed CA certificates used to verify peers (built-in default is `/etc/ssl/certs` on Linux); set this on distros that keep it elsewhere. Defaults to `nil`
-    * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). When set, the default `user-agent` header is not added. Defaults to `nil`
+    * `:impersonate` - browser to impersonate (TLS, HTTP/2 fingerprint and default headers), e.g. `"chrome136"`, `"safari18_0"`, `"firefox135"`. See the [curl-impersonate targets](https://github.com/lexiforest/curl-impersonate#supported-browsers). On Linux x86_64 (glibc) the bundled build also has `"chrome153"` to `"chrome157"`, each with `_macos` and `_linux` variants (e.g. `"chrome157_linux"`). When set, the default `user-agent` header is not added. Defaults to `nil`
     * `:impersonate_default_headers` - whether `:impersonate` also sends the browser's default headers. Defaults to `true`
     * `:accept_encoding` - encodings to request and transparently decode (`CURLOPT_ACCEPT_ENCODING`). `""` means every
       encoding this build supports (gzip, deflate, br, zstd), like curl's `--compressed`; a value such as `"gzip"` limits it;
@@ -250,7 +250,7 @@ defmodule ExCurlImpersonate do
   end
 
   @doc """
-  Returns the version string of the linked libcurl, e.g. `"libcurl/8.22.0-IMPERSONATE BoringSSL/..."`.
+  Returns the version string of the linked libcurl, e.g. `"libcurl/8.23.0-IMPERSONATE BoringSSL ..."`.
   """
   def curl_version, do: Request.curl_version()
 

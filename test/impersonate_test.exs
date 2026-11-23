@@ -38,12 +38,12 @@ defmodule ExCurlImpersonate.ImpersonateTest do
     assert headers["user-agent"] == "mine"
   end
 
-  # chrome153-155 only exist in our fork's build, used on x86_64-linux-gnu
+  # chrome153-157 only exist in our fork's build, used on x86_64-linux-gnu
   @fork_build ExCurlImpersonate.Build.triple(
                 List.to_string(:erlang.system_info(:system_architecture))
               ) == "x86_64-linux-gnu"
 
-  for major <- 153..155,
+  for major <- 153..157,
       {suffix, platform} <- [{"", "Windows"}, {"_macos", "macOS"}, {"_linux", "Linux"}] do
     target = "chrome#{major}#{suffix}"
 
